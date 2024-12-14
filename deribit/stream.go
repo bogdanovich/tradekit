@@ -123,7 +123,6 @@ func (s *stream[T, U]) Start(ctx context.Context) error {
 	ws := websocket.New(s.url, s.opts)
 
 	ws.OnConnect = func() error {
-		// Authenticate and wait for the response if the credentials are supplied.
 		if s.credentials != nil {
 			if s.closed.Load() {
 				return nil
@@ -133,18 +132,23 @@ func (s *stream[T, U]) Start(ctx context.Context) error {
 			if err != nil {
 				return fmt.Errorf("authenticating: %w", err)
 			}
-			msg := <-ws.Messages()
-			defer msg.Release()
-			var p fastjson.Parser
-			v, err := p.ParseBytes(msg.Data())
-			if err != nil {
-				return err
-			}
-			if id != v.GetInt64("id") {
-				return fmt.Errorf("expected auth response but received %s", msg.Data())
-			}
-			if err := isRpcError(v); err != nil {
-				return fmt.Errorf("auth failure: %w", err)
+
+			select {
+			case msg := <-ws.Messages():
+				defer msg.Release()
+				var p fastjson.Parser
+				v, err := p.ParseBytes(msg.Data())
+				if err != nil {
+					return err
+				}
+				if id != v.GetInt64("id") {
+					return fmt.Errorf("expected auth response but received %s", msg.Data())
+				}
+				if err := isRpcError(v); err != nil {
+					return fmt.Errorf("auth failure: %w", err)
+				}
+			case <-time.After(10 * time.Second):
+				return fmt.Errorf("authentication timed out")
 			}
 		}
 
@@ -210,7 +214,11 @@ func (s *stream[T, U]) handleMessage(msg websocket.Message) error {
 
 	method := v.GetStringBytes("method")
 	if method == nil {
-		// This is a subscribe / unsubscribe response. We can ignore it.
+		// This might be a subscribe/unsubscribe response or some other non-method message.
+		if v.Get("error") != nil {
+			return fmt.Errorf("received error response: %s", string(msg.Data()))
+		}
+		// If it's a known subscription response, you can safely return, otherwise log:
 		return nil
 	}
 

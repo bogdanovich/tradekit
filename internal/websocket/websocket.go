@@ -3,6 +3,7 @@ package websocket
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -25,31 +26,23 @@ func connect(ctx context.Context, url string, enableCompression bool) (*websocke
 	sleep := time.Second
 	var err error
 	var conn *websocket.Conn
-loop:
 	for i := 0; i < 10; i++ {
 		select {
 		case <-ctx.Done():
-			break loop
+			return nil, ctx.Err()
 		default:
 			dialer := websocket.DefaultDialer
-			if enableCompression {
-				dialer.EnableCompression = true
-			}
+			dialer.EnableCompression = enableCompression
 			conn, _, err = dialer.DialContext(ctx, url, nil)
-			if err != nil {
-				sleepCtx(ctx, sleep)
-				sleep *= 2
-			} else {
-				break loop
+			if err == nil {
+				return conn, nil
 			}
+			// log.Printf("connection attempt %d failed: %v. Retrying in %s...", i+1, err, sleep)
+			sleepCtx(ctx, sleep)
+			sleep *= 2
 		}
 	}
-
-	if conn == nil {
-		return nil, err
-	}
-
-	return conn, err
+	return nil, fmt.Errorf("failed to connect after retries: %w", err)
 }
 
 // Message is the data produced by the websocket.
@@ -239,7 +232,13 @@ func (ws *Websocket) Start(ctx context.Context) error {
 	go ws.run(restartCtx, errc, done)
 
 	// Reconnect on any of these close codes
-	reconnectOn := []int{websocket.CloseNormalClosure, websocket.CloseServiceRestart, websocket.CloseTryAgainLater, websocket.CloseAbnormalClosure}
+	reconnectOn := []int{
+		websocket.CloseNormalClosure,
+		websocket.CloseServiceRestart,
+		websocket.CloseTryAgainLater,
+		websocket.CloseAbnormalClosure,
+		websocket.CloseNoStatusReceived,
+	}
 
 	go func() {
 		resetTicker := time.NewTicker(ws.opts.ResetInterval)

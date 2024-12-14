@@ -13,9 +13,9 @@ type PriceIndexSub struct {
 }
 
 type PriceIndex struct {
-	Timestamp int64   `json:"timestamp"`
-	Price     float64 `json:"price"`
-	IndexName string  `json:"index_name"`
+	Timestamp int64
+	Price     float64
+	IndexName string
 }
 
 func (sub PriceIndexSub) channel() string {

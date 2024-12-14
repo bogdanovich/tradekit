@@ -14,7 +14,7 @@ func main() {
 	defer stop()
 
 	tickerSubs := []deribit.TickerSub{
-		{Instrument: "BTC_USDT", Interval: "agg2"},
+		{Instrument: "BTC-PERPETUAL", Interval: "agg2"},
 	}
 	tickerStream := deribit.NewTickerStream("wss://streams.deribit.com/ws/api/v2", tickerSubs...)
 
@@ -29,6 +29,7 @@ func main() {
 		case msg := <-tickerStream.Messages():
 			fmt.Printf("%+v\n", msg)
 		case err := <-tickerStream.Err():
+			fmt.Printf("error %s", err)
 			panic(err)
 		}
 	}
