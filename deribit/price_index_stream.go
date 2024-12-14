@@ -3,6 +3,7 @@ package deribit
 import (
 	"fmt"
 
+	"github.com/antibubblewrap/tradekit/lib/tk"
 	"github.com/valyala/fastjson"
 )
 
@@ -24,13 +25,15 @@ func (sub PriceIndexSub) channel() string {
 
 // NewPriceIndexStream creates a new [Stream] which produces a stream of price index updates.
 // For details see: https://docs.deribit.com/#deribit_price_index-index_name
-func NewPriceIndexStream(wsUrl string, subscriptions ...PriceIndexSub) Stream[PriceIndex, PriceIndexSub] {
+func NewPriceIndexStream(wsUrl string, subscriptions []PriceIndexSub, paramFuncs ...tk.Param) Stream[PriceIndex, PriceIndexSub] {
+
 	p := streamParams[PriceIndex, PriceIndexSub]{
 		name:         "PriceIndexStream",
 		wsUrl:        wsUrl,
 		isPrivate:    false,
 		parseMessage: parsePriceIndex,
 		subs:         subscriptions,
+		Params:       tk.ApplyParams(paramFuncs),
 	}
 	s := newStream[PriceIndex](p)
 	return s

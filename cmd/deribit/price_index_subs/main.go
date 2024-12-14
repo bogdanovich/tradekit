@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	"github.com/antibubblewrap/tradekit/deribit"
+	"github.com/antibubblewrap/tradekit/lib/tk"
 )
 
 func main() {
@@ -17,7 +18,11 @@ func main() {
 		{IndexName: "btc_usd"},
 		{IndexName: "eth_usd"},
 	}
-	priceIndexStream := deribit.NewPriceIndexStream("wss://streams.deribit.com/ws/api/v2", priceIndexSubs...)
+	priceIndexStream := deribit.NewPriceIndexStream(
+		"wss://streams.deribit.com/ws/api/v2",
+		priceIndexSubs,
+		tk.WithLogger(tk.NewLogger()),
+	)
 
 	if err := priceIndexStream.Start(ctx); err != nil {
 		panic(err)

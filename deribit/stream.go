@@ -10,6 +10,7 @@ import (
 	"github.com/antibubblewrap/tradekit"
 	"github.com/antibubblewrap/tradekit/internal/set"
 	"github.com/antibubblewrap/tradekit/internal/websocket"
+	"github.com/antibubblewrap/tradekit/lib/tk"
 	"github.com/valyala/fastjson"
 )
 
@@ -76,6 +77,7 @@ type stream[T any, U subscription] struct {
 
 	closed atomic.Bool
 	p      fastjson.Parser
+	*tk.Params
 }
 
 type subscription interface {
@@ -88,6 +90,7 @@ type streamParams[T any, U subscription] struct {
 	isPrivate    bool
 	parseMessage func(*fastjson.Value) T
 	subs         []U
+	*tk.Params
 }
 
 func newStream[T any, U subscription](p streamParams[T, U]) *stream[T, U] {
@@ -95,6 +98,9 @@ func newStream[T any, U subscription](p streamParams[T, U]) *stream[T, U] {
 	channels := make([]string, len(p.subs))
 	for i, sub := range p.subs {
 		channels[i] = sub.channel()
+	}
+	if p.Params == nil {
+		p.Params = tk.DefaultParams()
 	}
 
 	return &stream[T, U]{
@@ -108,6 +114,7 @@ func newStream[T any, U subscription](p streamParams[T, U]) *stream[T, U] {
 		subRequests:          make(chan []U, 10),
 		unsubRequests:        make(chan []U, 10),
 		subscribeAllRequests: make(chan struct{}, 10),
+		Params:               p.Params,
 	}
 }
 
