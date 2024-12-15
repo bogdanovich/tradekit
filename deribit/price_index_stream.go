@@ -28,7 +28,7 @@ func (sub PriceIndexSub) channel() string {
 func NewPriceIndexStream(wsUrl string, subscriptions []PriceIndexSub, paramFuncs ...tk.Param) Stream[PriceIndex, PriceIndexSub] {
 
 	p := streamParams[PriceIndex, PriceIndexSub]{
-		name:         "PriceIndexStream",
+		name:         "price_index_stream",
 		wsUrl:        wsUrl,
 		isPrivate:    false,
 		parseMessage: parsePriceIndex,

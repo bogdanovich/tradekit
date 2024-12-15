@@ -4,14 +4,14 @@ import "log"
 
 // Logger interface
 type Logger interface {
-	Debug(msg string)
+	Info(msg string)
 	Error(msg string)
 }
 
 // NoOpLogger is a no-op implementation of the Logger interface
 type NoOpLogger struct{}
 
-func (l *NoOpLogger) Debug(msg string) {}
+func (l *NoOpLogger) Info(msg string)  {}
 func (l *NoOpLogger) Error(msg string) {}
 
 type SimpleLogger struct{}
@@ -20,8 +20,8 @@ func NewLogger() Logger {
 	return &SimpleLogger{}
 }
 
-func (l *SimpleLogger) Debug(msg string) {
-	log.Println("DEBUG: ", msg)
+func (l *SimpleLogger) Info(msg string) {
+	log.Println("INFO: ", msg)
 }
 
 func (l *SimpleLogger) Error(msg string) {

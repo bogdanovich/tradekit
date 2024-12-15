@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -93,6 +94,10 @@ type streamParams[T any, U subscription] struct {
 	*tk.Params
 }
 
+var reconnectableErrors = []string{
+	"read tcp",
+}
+
 func newStream[T any, U subscription](p streamParams[T, U]) *stream[T, U] {
 
 	channels := make([]string, len(p.subs))
@@ -127,6 +132,51 @@ func (s *stream[T, U]) SetCredentials(c *Credentials) {
 }
 
 func (s *stream[T, U]) Start(ctx context.Context) error {
+	// Create a channel to signal stream restart
+	restartChan := make(chan struct{}, 1)
+
+	go func() {
+		defer func() {
+			s.closed.Store(true)
+			close(s.msgs)
+			close(s.errc)
+			close(s.subRequests)
+			close(s.unsubRequests)
+			close(s.subscribeAllRequests)
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-restartChan:
+				s.Logger.Info(s.namePrefix("reconnecting in 5 seconds..."))
+				time.Sleep(5 * time.Second)
+
+				// Perform the websocket connection and stream setup
+				if err := s.startWebsocketStream(ctx, restartChan); err != nil {
+					// If startup fails, send the error and potentially stop
+					select {
+					case s.errc <- s.nameErr(err):
+					default:
+					}
+					return
+				}
+				s.Logger.Info(s.namePrefix("reconnected"))
+			}
+		}
+	}()
+
+	// Initial stream start
+	return s.startWebsocketStream(ctx, restartChan)
+}
+
+func (s *stream[T, U]) startWebsocketStream(
+	ctx context.Context,
+	restartChan chan struct{},
+) error {
+	// Reset closed state
+	s.closed.Store(false)
+
 	ws := websocket.New(s.url, s.opts)
 
 	ws.OnConnect = func() error {
@@ -165,12 +215,6 @@ func (s *stream[T, U]) Start(ctx context.Context) error {
 
 	go func() {
 		defer func() {
-			s.closed.Store(true)
-			close(s.msgs)
-			close(s.errc)
-			close(s.subRequests)
-			close(s.unsubRequests)
-			close(s.subscribeAllRequests)
 			ws.Close()
 		}()
 		for {
@@ -198,6 +242,18 @@ func (s *stream[T, U]) Start(ctx context.Context) error {
 					return
 				}
 			case err := <-ws.Err():
+				// Check if the error requires a reconnection attempt
+				if s.shouldReconnect(err) {
+					// Signal for restart, non-blocking
+					s.Logger.Error(s.nameErr(err).Error())
+					select {
+					case restartChan <- struct{}{}:
+					default:
+					}
+					return
+				}
+
+				// Only send non-reconnectable errors to the error channel
 				s.errc <- s.nameErr(err)
 				return
 			}
@@ -209,6 +265,18 @@ func (s *stream[T, U]) Start(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *stream[T, U]) shouldReconnect(err error) bool {
+	if err == nil {
+		return false
+	}
+	for _, reconnectable := range reconnectableErrors {
+		if strings.Contains(err.Error(), reconnectable) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *stream[T, U]) handleMessage(msg websocket.Message) error {
@@ -384,7 +452,11 @@ func (s *stream[T, U]) Messages() <-chan T {
 }
 
 func (s *stream[T, U]) nameErr(err error) error {
-	return fmt.Errorf("Deribit %s: %w", s.name, err)
+	return fmt.Errorf("deribit %s: %w", s.name, err)
+}
+
+func (s *stream[T, U]) namePrefix(msg string) string {
+	return fmt.Sprintf("deribit %s: %s", s.name, msg)
 }
 
 // Send an authentication request along the stream's websocket
