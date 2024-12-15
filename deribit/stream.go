@@ -185,28 +185,11 @@ func (s *stream[T, U]) startWebsocketStream(
 			if s.closed.Load() {
 				return nil
 			}
-
-			id, err := s.authenticate(&ws)
+			// we don't need to wait for response, just send the auth request
+			// since handleMessage skips all incoming messages without a method field
+			_, err := s.sendAuthRequest(&ws)
 			if err != nil {
-				return fmt.Errorf("authenticating: %w", err)
-			}
-
-			select {
-			case msg := <-ws.Messages():
-				defer msg.Release()
-				var p fastjson.Parser
-				v, err := p.ParseBytes(msg.Data())
-				if err != nil {
-					return err
-				}
-				if id != v.GetInt64("id") {
-					return fmt.Errorf("expected auth response but received %s", msg.Data())
-				}
-				if err := isRpcError(v); err != nil {
-					return fmt.Errorf("auth failure: %w", err)
-				}
-			case <-time.After(10 * time.Second):
-				return fmt.Errorf("authentication timed out")
+				return fmt.Errorf("auth failure: %w", err)
 			}
 		}
 
@@ -460,8 +443,8 @@ func (s *stream[T, U]) namePrefix(msg string) string {
 	return fmt.Sprintf("deribit %s: %s", s.name, msg)
 }
 
-// Send an authentication request along the stream's websocket
-func (s *stream[T, U]) authenticate(ws *websocket.Websocket) (id int64, err error) {
+// sendAuthRequest sends auth request along the stream's websocket
+func (s *stream[T, U]) sendAuthRequest(ws *websocket.Websocket) (id int64, err error) {
 	id = genId()
 	method := methodPublicAuth
 	params := map[string]string{
