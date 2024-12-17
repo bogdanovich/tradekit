@@ -6,14 +6,14 @@ import (
 	"github.com/valyala/fastjson"
 )
 
-// TickerSub represents a subscription to a Deribit ticker stream created using [NewTickerStream].
+// DeribitTickerSub represents a subscription to a Deribit ticker stream created using [NewTickerStream].
 // For details see: https://docs.deribit.com/#ticker-instrument_name-interval
-type TickerSub struct {
+type DeribitTickerSub struct {
 	Instrument string
 	Interval   string
 }
 
-type Ticker struct {
+type DeribitTicker struct {
 	Timestamp              int64         `json:"timestamp"`
 	Instrument             string        `json:"instrument_name"`
 	BestAskPrice           float64       `json:"best_ask_price"`
@@ -47,26 +47,26 @@ type TickerGreeks struct {
 	Rho   float64 `json:"rho"`
 }
 
-func (sub TickerSub) channel() string {
+func (sub DeribitTickerSub) channel() string {
 	return fmt.Sprintf("ticker.%s.%s", sub.Instrument, sub.Interval)
 }
 
 // NewTickerStream creates a new [Stream] which produces a stream of ticker updates.
 // For details see: https://docs.deribit.com/#ticker-instrument_name-interval
-func NewTickerStream(wsUrl string, subscriptions ...TickerSub) Stream[Ticker, TickerSub] {
-	p := streamParams[Ticker, TickerSub]{
+func NewTickerStream(wsUrl string, subscriptions ...DeribitTickerSub) Stream[DeribitTicker, DeribitTickerSub] {
+	p := streamParams[DeribitTicker, DeribitTickerSub]{
 		name:         "TickerStream",
 		wsUrl:        wsUrl,
 		isPrivate:    false,
 		parseMessage: parseTicker,
 		subs:         subscriptions,
 	}
-	s := newStream[Ticker](p)
+	s := newStream[DeribitTicker](p)
 	return s
 }
 
-func parseTicker(v *fastjson.Value) Ticker {
-	return Ticker{
+func parseTicker(v *fastjson.Value) DeribitTicker {
+	return DeribitTicker{
 		Timestamp:              v.GetInt64("timestamp"),
 		Instrument:             string(v.GetStringBytes("instrument_name")),
 		BestAskPrice:           v.GetFloat64("best_ask_price"),

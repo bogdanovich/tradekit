@@ -97,6 +97,8 @@ type streamParams[T any, U subscription] struct {
 var reconnectableErrors = []string{
 	"read tcp",
 	"write tcp",
+	"websocket: close sent",
+	"websocket: bad handshake",
 }
 
 func newStream[T any, U subscription](p streamParams[T, U]) *stream[T, U] {

@@ -14,9 +14,10 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	priceIndexSubs := []deribit.PriceIndexSub{
+	priceIndexSubs := []deribit.DeribitPriceIndexSub{
 		{IndexName: "btc_usd"},
 		{IndexName: "eth_usd"},
+		//{IndexName: "usdt_usd"},
 	}
 	priceIndexStream := deribit.NewPriceIndexStream(
 		"wss://streams.deribit.com/ws/api/v2",

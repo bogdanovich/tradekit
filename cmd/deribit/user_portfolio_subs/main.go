@@ -14,7 +14,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	userPortfolioSubs := []deribit.UserPortfolioSub{
+	userPortfolioSubs := []deribit.DeribitUserPortfolioSub{
 		{Currency: "any"},
 	}
 	userPortfolioStream := deribit.NewUserPortfolioStream(

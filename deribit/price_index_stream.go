@@ -7,27 +7,27 @@ import (
 	"github.com/valyala/fastjson"
 )
 
-// PriceIndexSub represents a subscription to a Deribit price index created using [NewPriceIndexStream].
+// DeribitPriceIndexSub represents a subscription to a Deribit price index created using [NewPriceIndexStream].
 // For details see: https://docs.deribit.com/#deribit_price_index-index_name
-type PriceIndexSub struct {
+type DeribitPriceIndexSub struct {
 	IndexName string
 }
 
-type PriceIndex struct {
+type DeribitPriceIndex struct {
 	Timestamp int64
 	Price     float64
 	IndexName string
 }
 
-func (sub PriceIndexSub) channel() string {
+func (sub DeribitPriceIndexSub) channel() string {
 	return fmt.Sprintf("deribit_price_index.%s", sub.IndexName)
 }
 
 // NewPriceIndexStream creates a new [Stream] which produces a stream of price index updates.
 // For details see: https://docs.deribit.com/#deribit_price_index-index_name
-func NewPriceIndexStream(wsUrl string, subscriptions []PriceIndexSub, paramFuncs ...tk.Param) Stream[PriceIndex, PriceIndexSub] {
+func NewPriceIndexStream(wsUrl string, subscriptions []DeribitPriceIndexSub, paramFuncs ...tk.Param) Stream[DeribitPriceIndex, DeribitPriceIndexSub] {
 
-	p := streamParams[PriceIndex, PriceIndexSub]{
+	p := streamParams[DeribitPriceIndex, DeribitPriceIndexSub]{
 		name:         "price_index_stream",
 		wsUrl:        wsUrl,
 		isPrivate:    false,
@@ -35,12 +35,12 @@ func NewPriceIndexStream(wsUrl string, subscriptions []PriceIndexSub, paramFuncs
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}
-	s := newStream[PriceIndex](p)
+	s := newStream[DeribitPriceIndex](p)
 	return s
 }
 
-func parsePriceIndex(v *fastjson.Value) PriceIndex {
-	return PriceIndex{
+func parsePriceIndex(v *fastjson.Value) DeribitPriceIndex {
+	return DeribitPriceIndex{
 		Timestamp: v.GetInt64("timestamp"),
 		Price:     v.GetFloat64("price"),
 		IndexName: string(v.GetStringBytes("index_name")),

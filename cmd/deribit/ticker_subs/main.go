@@ -13,7 +13,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	tickerSubs := []deribit.TickerSub{
+	tickerSubs := []deribit.DeribitTickerSub{
 		{Instrument: "BTC-PERPETUAL", Interval: "agg2"},
 	}
 	tickerStream := deribit.NewTickerStream("wss://streams.deribit.com/ws/api/v2", tickerSubs...)

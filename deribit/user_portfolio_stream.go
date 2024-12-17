@@ -7,13 +7,13 @@ import (
 	"github.com/valyala/fastjson"
 )
 
-// UserPortfolioSub represents a subscription to a Deribit user portfolio stream.
+// DeribitUserPortfolioSub represents a subscription to a Deribit user portfolio stream.
 // For details see: https://docs.deribit.com/#user-portfolio-currency
-type UserPortfolioSub struct {
+type DeribitUserPortfolioSub struct {
 	Currency string // e.g., BTC, ETH, etc.
 }
 
-type UserPortfolioData struct {
+type DeribitUserPortfolioCurrency struct {
 	Currency                     string
 	MaintenanceMargin            float64
 	DeltaTotal                   float64
@@ -54,14 +54,14 @@ type UserPortfolioData struct {
 }
 
 // Returns the channel name for the given currency.
-func (sub UserPortfolioSub) channel() string {
+func (sub DeribitUserPortfolioSub) channel() string {
 	return fmt.Sprintf("user.portfolio.%s", sub.Currency)
 }
 
 // NewUserPortfolioStream creates a new [Stream] which produces a stream of user portfolio updates.
 // For details see: https://docs.deribit.com/#user-portfolio-currency
-func NewUserPortfolioStream(wsUrl string, c Credentials, subscriptions []UserPortfolioSub, paramFuncs ...tk.Param) Stream[UserPortfolioData, UserPortfolioSub] {
-	p := streamParams[UserPortfolioData, UserPortfolioSub]{
+func NewUserPortfolioStream(wsUrl string, c Credentials, subscriptions []DeribitUserPortfolioSub, paramFuncs ...tk.Param) Stream[DeribitUserPortfolioCurrency, DeribitUserPortfolioSub] {
+	p := streamParams[DeribitUserPortfolioCurrency, DeribitUserPortfolioSub]{
 		name:         "user_portfolio_stream",
 		wsUrl:        wsUrl,
 		isPrivate:    true, // Portfolio stream requires authentication
@@ -69,13 +69,13 @@ func NewUserPortfolioStream(wsUrl string, c Credentials, subscriptions []UserPor
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}
-	s := newStream[UserPortfolioData](p)
+	s := newStream[DeribitUserPortfolioCurrency](p)
 	s.SetCredentials(&c)
 	return s
 }
 
-func parsePortfolioData(v *fastjson.Value) UserPortfolioData {
-	return UserPortfolioData{
+func parsePortfolioData(v *fastjson.Value) DeribitUserPortfolioCurrency {
+	return DeribitUserPortfolioCurrency{
 		Currency:                     string(v.GetStringBytes("currency")),
 		MaintenanceMargin:            v.GetFloat64("maintenance_margin"),
 		DeltaTotal:                   v.GetFloat64("delta_total"),
