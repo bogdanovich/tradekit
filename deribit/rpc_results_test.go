@@ -335,7 +335,7 @@ func TestParsePosition(t *testing.T) {
 		"total_profit_loss": 0
 	}
 	`
-	expected := Position{
+	expected := DeribitPosition{
 		Direction:        "buy",
 		IndexPrice:       3555.86,
 		InstrumentName:   "BTC-PERPETUAL",
@@ -380,7 +380,7 @@ func TestParsePositions(t *testing.T) {
       }
   	]	
 	`
-	expected := []Position{
+	expected := []DeribitPosition{
 		{
 			AveragePrice:              7440.18,
 			Delta:                     0.006687487,

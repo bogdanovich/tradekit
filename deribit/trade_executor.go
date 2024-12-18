@@ -131,8 +131,8 @@ type liveTradeExecutor struct {
 	orderStateCallbacks map[int64]func(RpcResponse[OrderUpdate])
 	cancelCallbacks     map[int64]func(RpcResponse[struct{}])
 	cancelManyCallbacks map[int64]func(RpcResponse[int])
-	positionCallbacks   map[int64]func(RpcResponse[Position])
-	positionsCallbacks  map[int64]func(RpcResponse[[]Position])
+	positionCallbacks   map[int64]func(RpcResponse[DeribitPosition])
+	positionsCallbacks  map[int64]func(RpcResponse[[]DeribitPosition])
 }
 
 // NewTradeExecutor creates a new Deribit TradingExecutor with the given websocket URL
@@ -149,8 +149,8 @@ func NewTradingExecutor(wsUrl string, credentials Credentials) TradingExecutor {
 		orderStateCallbacks: make(map[int64]func(RpcResponse[OrderUpdate])),
 		cancelCallbacks:     make(map[int64]func(RpcResponse[struct{}])),
 		cancelManyCallbacks: make(map[int64]func(RpcResponse[int])),
-		positionCallbacks:   make(map[int64]func(RpcResponse[Position])),
-		positionsCallbacks:  make(map[int64]func(RpcResponse[[]Position])),
+		positionCallbacks:   make(map[int64]func(RpcResponse[DeribitPosition])),
+		positionsCallbacks:  make(map[int64]func(RpcResponse[[]DeribitPosition])),
 	}
 }
 
@@ -233,9 +233,9 @@ func (ex *liveTradeExecutor) handleResponse(msg websocket.Message) error {
 		if ok {
 			delete(ex.positionsCallbacks, id)
 			if rpcErr != nil {
-				cb(RpcResponse[[]Position]{Error: rpcErr})
+				cb(RpcResponse[[]DeribitPosition]{Error: rpcErr})
 			} else {
-				cb(RpcResponse[[]Position]{Result: parsePositions(result)})
+				cb(RpcResponse[[]DeribitPosition]{Result: parsePositions(result)})
 			}
 		}
 	} else if method == methodPrivateGetPosition {
@@ -243,9 +243,9 @@ func (ex *liveTradeExecutor) handleResponse(msg websocket.Message) error {
 		if ok {
 			delete(ex.positionCallbacks, id)
 			if rpcErr != nil {
-				cb(RpcResponse[Position]{Error: rpcErr})
+				cb(RpcResponse[DeribitPosition]{Error: rpcErr})
 			} else {
-				cb(RpcResponse[Position]{Result: parsePosition(result)})
+				cb(RpcResponse[DeribitPosition]{Result: parsePosition(result)})
 			}
 		}
 	} else {
@@ -441,7 +441,7 @@ type GetPositionsOptions struct {
 	Kind InstrumentKind
 }
 
-func (ex *liveTradeExecutor) GetPositions(currency string, opts *GetPositionsOptions, cb func(res RpcResponse[[]Position])) error {
+func (ex *liveTradeExecutor) GetPositions(currency string, opts *GetPositionsOptions, cb func(res RpcResponse[[]DeribitPosition])) error {
 	ex.m.Lock()
 	defer ex.m.Unlock()
 	if ex.isClosed {
@@ -458,7 +458,7 @@ func (ex *liveTradeExecutor) GetPositions(currency string, opts *GetPositionsOpt
 	return nil
 }
 
-func (ex *liveTradeExecutor) GetPosition(instrument string, cb func(RpcResponse[Position])) error {
+func (ex *liveTradeExecutor) GetPosition(instrument string, cb func(RpcResponse[DeribitPosition])) error {
 	ex.m.Lock()
 	defer ex.m.Unlock()
 	if ex.isClosed {
