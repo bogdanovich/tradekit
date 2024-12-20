@@ -19,11 +19,11 @@ func main() {
 	}
 	userPortfolioStream := deribit.NewUserPortfolioStream(
 		"wss://www.deribit.com/ws/api/v2",
-		deribit.Credentials{
+		userPortfolioSubs,
+		tk.WithCredentials(tk.Credentials{
 			ClientId:     os.Getenv("DERIBIT_CLIENT_ID"),
 			ClientSecret: os.Getenv("DERIBIT_CLIENT_SECRET"),
-		},
-		userPortfolioSubs,
+		}),
 		tk.WithLogger(tk.NewLogger()),
 	)
 

@@ -2,6 +2,8 @@ package deribit
 
 import (
 	"fmt"
+
+	"github.com/antibubblewrap/tradekit/lib/tk"
 )
 
 // OrderbookSub represents a request to subscribe to a [NewOrderbookStream] channel.
@@ -12,6 +14,7 @@ type OrderbookSub struct {
 
 	// Optional message frequency. Defaults to "raw" if not set.
 	Freq UpdateFrequency
+	Credentials
 }
 
 func (sub OrderbookSub) channel() string {
@@ -26,7 +29,7 @@ func (sub OrderbookSub) channel() string {
 // orderbook updates. For a stream of orderbook depth snapshots, see [NewOrderbookDepthStream]
 // For details see:
 //   - https://docs.deribit.com/#book-instrument_name-interval
-func NewOrderbookStream(wsUrl string, subscriptions ...OrderbookSub) Stream[OrderbookUpdate, OrderbookSub] {
+func NewOrderbookStream(wsUrl string, subscriptions []OrderbookSub, paramFuncs ...tk.Param) Stream[OrderbookUpdate, OrderbookSub] {
 	subs := make([]subscription, len(subscriptions))
 	for i, sub := range subscriptions {
 		subs[i] = sub
@@ -37,6 +40,7 @@ func NewOrderbookStream(wsUrl string, subscriptions ...OrderbookSub) Stream[Orde
 		isPrivate:    false,
 		parseMessage: parseOrderbookUpdate,
 		subs:         subscriptions,
+		Params:       tk.ApplyParams(paramFuncs),
 	}
 	s := newStream[OrderbookUpdate](p)
 	return s

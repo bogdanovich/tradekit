@@ -1,11 +1,20 @@
 package tk
 
-import "log"
+import (
+	"log"
+)
 
 // Logger interface
 type Logger interface {
 	Info(msg string)
 	Error(msg string)
+}
+
+// Credentials are used to authenticate to the Deribit JSON-RPC API to access private
+// methods.
+type Credentials struct {
+	ClientId     string
+	ClientSecret string
 }
 
 // NoOpLogger is a no-op implementation of the Logger interface
@@ -31,6 +40,7 @@ func (l *SimpleLogger) Error(msg string) {
 // Params struct encapsulates optional parameters
 type Params struct {
 	Logger Logger
+	*Credentials
 }
 
 // Param is a functional option for modifying the Params struct
@@ -40,6 +50,12 @@ type Param func(*Params)
 func WithLogger(logger Logger) Param {
 	return func(params *Params) {
 		params.Logger = logger
+	}
+}
+
+func WithCredentials(c Credentials) Param {
+	return func(params *Params) {
+		params.Credentials = &c
 	}
 }
 

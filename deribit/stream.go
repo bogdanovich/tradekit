@@ -35,7 +35,7 @@ type Stream[T any, U subscription] interface {
 
 	// SetCredentials sets credentials for authentication with Deribit. Check the Deribit
 	// documentation to see if authentication is required for a particular stream.
-	SetCredentials(*Credentials)
+	SetCredentials(*tk.Credentials)
 
 	// Start the stream. The stream must be started before any messages will be received
 	// or any new subscriptions may be made.
@@ -70,7 +70,7 @@ type stream[T any, U subscription] struct {
 	isPrivate     bool
 	subscriptions set.Set[string]
 	opts          *tradekit.StreamOptions
-	credentials   *Credentials
+	credentials   *tk.Credentials
 
 	subRequests          chan []U
 	unsubRequests        chan []U
@@ -130,8 +130,8 @@ func (s *stream[T, U]) SetStreamOptions(opts *tradekit.StreamOptions) {
 	s.opts = opts
 }
 
-func (s *stream[T, U]) SetCredentials(c *Credentials) {
-	s.credentials = c
+func (s *stream[T, U]) SetCredentials(c *tk.Credentials) {
+	s.Params.Credentials = c
 }
 
 func (s *stream[T, U]) Start(ctx context.Context) error {
@@ -183,7 +183,7 @@ func (s *stream[T, U]) startWebsocketStream(
 	ws := websocket.New(s.url, s.opts)
 
 	ws.OnConnect = func() error {
-		if s.credentials != nil {
+		if s.Params.Credentials != nil {
 			if s.closed.Load() {
 				return nil
 			}
@@ -451,8 +451,8 @@ func (s *stream[T, U]) sendAuthRequest(ws *websocket.Websocket) (id int64, err e
 	method := methodPublicAuth
 	params := map[string]string{
 		"grant_type":    "client_credentials",
-		"client_id":     s.credentials.ClientId,
-		"client_secret": s.credentials.ClientSecret,
+		"client_id":     s.Params.ClientId,
+		"client_secret": s.Params.ClientSecret,
 	}
 	msg, err := rpcRequestMsg(method, id, params)
 	if err != nil {

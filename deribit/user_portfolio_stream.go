@@ -64,7 +64,7 @@ func (sub DeribitUserPortfolioSub) channel() string {
 }
 
 // NewUserPortfolioStream creates a new stream for user portfolio updates.
-func NewUserPortfolioStream(wsUrl string, c Credentials, subscriptions []DeribitUserPortfolioSub, paramFuncs ...tk.Param) Stream[DeribitUserPortfolioCurrency, DeribitUserPortfolioSub] {
+func NewUserPortfolioStream(wsUrl string, subscriptions []DeribitUserPortfolioSub, paramFuncs ...tk.Param) Stream[DeribitUserPortfolioCurrency, DeribitUserPortfolioSub] {
 	p := streamParams[DeribitUserPortfolioCurrency, DeribitUserPortfolioSub]{
 		name:         "user_portfolio_stream",
 		wsUrl:        wsUrl,
@@ -74,7 +74,6 @@ func NewUserPortfolioStream(wsUrl string, c Credentials, subscriptions []Deribit
 		Params:       tk.ApplyParams(paramFuncs),
 	}
 	s := newStream[DeribitUserPortfolioCurrency](p)
-	s.SetCredentials(&c)
 	return s
 }
 

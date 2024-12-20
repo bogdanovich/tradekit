@@ -2,6 +2,8 @@ package deribit
 
 import (
 	"fmt"
+
+	"github.com/antibubblewrap/tradekit/lib/tk"
 )
 
 // UserOrdersSub defines a subscription channel for a user ordders stream created using
@@ -25,7 +27,7 @@ func (s UserOrdersSub) channel() string {
 // account. Credentials are required for this stream. For details see:
 //   - https://docs.deribit.com/#user-orders-instrument_name-raw
 //   - https://docs.deribit.com/#user-orders-kind-currency-interval
-func NewUserOrdersStream(wsUrl string, c Credentials, subscriptions ...UserOrdersSub) Stream[Order, UserOrdersSub] {
+func NewUserOrdersStream(wsUrl string, c tk.Credentials, subscriptions ...UserOrdersSub) Stream[Order, UserOrdersSub] {
 	subs := make([]subscription, len(subscriptions))
 	for i, sub := range subscriptions {
 		subs[i] = sub
@@ -38,6 +40,6 @@ func NewUserOrdersStream(wsUrl string, c Credentials, subscriptions ...UserOrder
 		subs:         subscriptions,
 	}
 	s := newStream[Order](p)
-	s.SetCredentials(&c)
+	s.Params.Credentials = &c
 	return s
 }

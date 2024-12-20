@@ -2,6 +2,8 @@ package deribit
 
 import (
 	"fmt"
+
+	"github.com/antibubblewrap/tradekit/lib/tk"
 )
 
 // UserTradesSub defines a subscription channel for a user trades stream created using
@@ -25,7 +27,7 @@ func (s UserTradesSub) channel() string {
 // credentials are required for this stream. For details see:
 //   - https://docs.deribit.com/#user-trades-kind-currency-interval
 //   - https://docs.deribit.com/#user-trades-instrument_name-interval
-func NewUserTradesStream(wsUrl string, c Credentials, subscriptions ...UserTradesSub) Stream[[]TradeExecution, UserTradesSub] {
+func NewUserTradesStream(wsUrl string, c tk.Credentials, subscriptions ...UserTradesSub) Stream[[]TradeExecution, UserTradesSub] {
 	p := streamParams[[]TradeExecution, UserTradesSub]{
 		name:         "UserTradesStream",
 		wsUrl:        wsUrl,
