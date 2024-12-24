@@ -2,6 +2,8 @@ package deribit
 
 import (
 	"fmt"
+
+	"github.com/antibubblewrap/tradekit/lib/tk"
 )
 
 // TradesSub represents a request to subscribe to a [NewTradeStream] channel. Either
@@ -34,13 +36,14 @@ func (s TradesSub) channel() string {
 }
 
 // NewTradesStream creates a new [Stream] which produces a stream of public trades.
-func NewTradesStream(wsUrl string, subscriptions ...TradesSub) Stream[[]PublicTrade, TradesSub] {
+func NewTradesStream(wsUrl string, subscriptions []TradesSub, paramFuncs ...tk.Param) Stream[[]PublicTrade, TradesSub] {
 	p := streamParams[[]PublicTrade, TradesSub]{
 		name:         "TradesStream",
 		wsUrl:        wsUrl,
 		isPrivate:    false,
 		parseMessage: parsePublicTrades,
 		subs:         subscriptions,
+		Params:       tk.ApplyParams(paramFuncs),
 	}
-	return newStream[[]PublicTrade](p)
+	return newStream(p)
 }

@@ -1,10 +1,138 @@
 package deribit
 
 import (
+	"bytes"
 	"time"
 
+	"github.com/antibubblewrap/tradekit"
 	"github.com/valyala/fastjson"
 )
+
+type PublicTrade struct {
+	TradeSeq      int64   `json:"trade_seq" parquet:"name=trade_seq, type=INT64"`
+	Timestamp     int64   `json:"timestamp" parquet:"name=timestamp, type=INT64"`
+	Instrument    string  `json:"instrument_name" parquet:"name=instrument, type=BYTE_ARRAY, convertedtype=UTF8"`
+	Price         float64 `json:"price" parquet:"name=price, type=DOUBLE"`
+	Amount        float64 `json:"amount" parquet:"name=amount, type=DOUBLE"`
+	Direction     string  `json:"direction" parquet:"name=direction, type=BYTE_ARRAY, convertedtype=UTF8"`
+	TickDirection int     `json:"tick_direction" parquet:"name=tick_direction, type=INT32"` // Direction of the "tick" (0 = Plus Tick, 1 = Zero-Plus Tick, 2 = Minus Tick, 3 = Zero-Minus Tick).
+	TradeId       string  `json:"trade_id" parquet:"name=trade_id, type=BYTE_ARRAY, convertedtype=UTF8"`
+	Liquidation   string  `json:"liquidation" parquet:"name=liquidation, type=BYTE_ARRAY, convertedtype=UTF8"`
+}
+
+// InstrumentState is the type of message produced by the InstrumentStateStream.
+// For details, see: https://docs.deribit.com/#instrument-state-kind-currency
+type InstrumentState struct {
+	Timestamp  int64  `json:"timestamp"`
+	State      string `json:"state"`
+	Instrument string `json:"instrument_name"`
+}
+
+type OrderbookDepth struct {
+	Timestamp  int64            `json:"timestamp" parquet:"name=timestamp, type=INT64"`
+	Instrument string           `json:"instrument_name" parquet:"name=instrument_name, type=BYTE_ARRAY, convertedtype=UTF8"`
+	ChangeID   int64            `json:"change_id" parquet:"name=change_id, type=INT64"`
+	Bids       []tradekit.Level `json:"bids" parquet:"name=bids, type=LIST"`
+	Asks       []tradekit.Level `json:"asks" parquet:"name=asks, type=LIST"`
+}
+
+// OrderbookMsg is the message type streamed from the Deribit book channel.
+// For more info see: https://docs.deribit.com/#book-instrument_name-interval
+type OrderbookUpdate struct {
+	// The type of orderbook update. Either "snapshot" or "change".
+	Type         string           `parquet:"name=type, type=BYTE_ARRAY, convertedtype=UTF8"`
+	Timestamp    int64            `parquet:"name=timestamp, type=INT64"`
+	Instrument   string           `parquet:"name=instrument, type=BYTE_ARRAY, convertedtype=UTF8"`
+	ChangeID     int64            `parquet:"name=change_id, type=INT64"`
+	PrevChangeID int64            `parquet:"name=prev_change_id, type=INT64"`
+	Bids         []tradekit.Level `parquet:"name=bids, type=LIST"`
+	Asks         []tradekit.Level `parquet:"name=asks, type=LIST"`
+}
+
+func parseOrderbookUpdate(v *fastjson.Value) OrderbookUpdate {
+	return OrderbookUpdate{
+		Type:         string(v.GetStringBytes("type")),
+		Timestamp:    v.GetInt64("timestamp"),
+		Instrument:   string(v.GetStringBytes("instrument_name")),
+		ChangeID:     v.GetInt64("change_id"),
+		PrevChangeID: v.GetInt64("prev_change_id"),
+		Bids:         parseOrderbookLevels(v.GetArray("bids")),
+		Asks:         parseOrderbookLevels(v.GetArray("asks")),
+	}
+}
+
+func parseOrderbookLevel(v *fastjson.Value) tradekit.Level {
+	action := v.GetStringBytes("0")
+	price := v.GetFloat64("1")
+	amount := v.GetFloat64("2")
+	if bytes.Equal(action, []byte("delete")) {
+		amount = 0
+	}
+	return tradekit.Level{Price: price, Amount: amount}
+}
+
+func parseOrderbookLevels(items []*fastjson.Value) []tradekit.Level {
+	levels := make([]tradekit.Level, len(items))
+	for i, item := range items {
+		levels[i] = parseOrderbookLevel(item)
+	}
+	return levels
+}
+
+func parsePublicTrade(v *fastjson.Value) PublicTrade {
+	return PublicTrade{
+		TradeSeq:      v.GetInt64("trade_seq"),
+		Timestamp:     v.GetInt64("timestamp"),
+		Instrument:    string(v.GetStringBytes("instrument_name")),
+		Price:         v.GetFloat64("price"),
+		Amount:        v.GetFloat64("amount"),
+		Direction:     string(v.GetStringBytes("direction")),
+		TickDirection: v.GetInt("tick_direction"),
+		TradeId:       string(v.GetStringBytes("trade_id")),
+		Liquidation:   string(v.GetStringBytes("liquidation")),
+	}
+}
+
+func parsePublicTrades(v *fastjson.Value) []PublicTrade {
+	items := v.GetArray()
+	trades := make([]PublicTrade, len(items))
+	for i, item := range items {
+		trades[i] = parsePublicTrade(item)
+	}
+	return trades
+}
+
+func parseInstrumentState(v *fastjson.Value) InstrumentState {
+	return InstrumentState{
+		Timestamp:  v.GetInt64("timestamp"),
+		State:      string(v.GetStringBytes("state")),
+		Instrument: string(v.GetStringBytes("instrument_name")),
+	}
+}
+
+func parseOrderbookDepth(v *fastjson.Value) OrderbookDepth {
+	return OrderbookDepth{
+		Timestamp:  v.GetInt64("timestamp"),
+		Instrument: string(v.GetStringBytes("instrument_name")),
+		ChangeID:   v.GetInt64("change_id"),
+		Bids:       parsePriceLevels(v.GetArray("bids")),
+		Asks:       parsePriceLevels(v.GetArray("asks")),
+	}
+}
+
+func parsePriceLevel(v *fastjson.Value) tradekit.Level {
+	price := v.GetFloat64("0")
+	amount := v.GetFloat64("1")
+	return tradekit.Level{Price: price, Amount: amount}
+}
+
+func parsePriceLevels(items []*fastjson.Value) []tradekit.Level {
+	levels := make([]tradekit.Level, len(items))
+	for i, v := range items {
+		levels[i] = parsePriceLevel(v)
+	}
+	return levels
+}
 
 // Option is the type of a Deribit option instrument.
 // For more details see https://docs.deribit.com/#public-get_instrument

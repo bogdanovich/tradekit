@@ -114,7 +114,7 @@ func newStream[T any, U subscription](p streamParams[T, U]) *stream[T, U] {
 	return &stream[T, U]{
 		name:                 p.name,
 		url:                  p.wsUrl,
-		msgs:                 make(chan T, 10),
+		msgs:                 make(chan T, p.ChannelBufferSize),
 		errc:                 make(chan error, 1),
 		parseMessage:         p.parseMessage,
 		subscriptions:        set.New[string](channels...),

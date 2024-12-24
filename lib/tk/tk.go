@@ -41,6 +41,7 @@ func (l *SimpleLogger) Error(msg string) {
 type Params struct {
 	Logger Logger
 	*Credentials
+	ChannelBufferSize int
 }
 
 // Param is a functional option for modifying the Params struct
@@ -59,10 +60,17 @@ func WithCredentials(c Credentials) Param {
 	}
 }
 
+func WithChannelBufferSize(size int) Param {
+	return func(params *Params) {
+		params.ChannelBufferSize = size
+	}
+}
+
 // DefaultParams returns the default optional parameters
 func DefaultParams() *Params {
 	return &Params{
-		Logger: &NoOpLogger{}, // Default to no-op logger
+		Logger:            &NoOpLogger{}, // Default to no-op logger
+		ChannelBufferSize: 10,
 	}
 }
 

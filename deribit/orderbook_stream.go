@@ -14,7 +14,6 @@ type OrderbookSub struct {
 
 	// Optional message frequency. Defaults to "raw" if not set.
 	Freq UpdateFrequency
-	Credentials
 }
 
 func (sub OrderbookSub) channel() string {

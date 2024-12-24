@@ -44,9 +44,7 @@ const (
 )
 
 // TradeDirection represents the direction of a trade - buy / sell
-type TradeDirection int
-
 const (
-	Buy TradeDirection = iota
-	Sell
+	Buy  string = "buy"
+	Sell string = "sell"
 )

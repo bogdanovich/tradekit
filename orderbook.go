@@ -29,8 +29,8 @@ type Orderbook struct {
 
 // Level stores the price and amount for a level in the bid or ask side of an Orderbook.
 type Level struct {
-	Price  float64
-	Amount float64
+	Price  float64 `parquet:"name=price, type=DOUBLE"`
+	Amount float64 `parquet:"name=amount, type=DOUBLE"`
 }
 
 func (l *Level) UnmarshalJSON(data []byte) error {

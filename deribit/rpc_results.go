@@ -24,16 +24,16 @@ type OrderUpdate struct {
 
 // TradeExecution represents a trade which was executed.
 type TradeExecution struct {
-	TradeSeq       int64          `json:"trade_seq"`
-	TradeId        string         `json:"trade_id"`
-	Timestamp      int64          `json:"timestamp"`
-	InstrumentName string         `json:"instrument_name"`
-	Price          float64        `json:"price"`
-	Amount         float64        `json:"amount"`
-	Direction      TradeDirection `json:"direction"`
-	Fee            float64        `json:"fee"`
-	OrderId        string         `json:"order_id"`
-	Liquidity      string         `json:"liquidity"`
+	TradeSeq       int64   `json:"trade_seq"`
+	TradeId        string  `json:"trade_id"`
+	Timestamp      int64   `json:"timestamp"`
+	InstrumentName string  `json:"instrument_name"`
+	Price          float64 `json:"price"`
+	Amount         float64 `json:"amount"`
+	Direction      string  `json:"direction"`
+	Fee            float64 `json:"fee"`
+	OrderId        string  `json:"order_id"`
+	Liquidity      string  `json:"liquidity"`
 }
 
 // Order represents the state of an order.
@@ -86,7 +86,7 @@ func parseTradeExecution(v *fastjson.Value) TradeExecution {
 		InstrumentName: string(v.GetStringBytes("instrument_name")),
 		Price:          v.GetFloat64("price"),
 		Amount:         v.GetFloat64("amount"),
-		Direction:      parseDirection(v.GetStringBytes("direction")),
+		Direction:      string(v.GetStringBytes("direction")),
 		Fee:            v.GetFloat64("fee"),
 		OrderId:        string(v.GetStringBytes("order_id")),
 		Liquidity:      string(v.GetStringBytes("liquidity")),
