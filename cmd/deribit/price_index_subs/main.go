@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/antibubblewrap/tradekit/deribit"
-	"github.com/antibubblewrap/tradekit/lib/tk"
+	"github.com/bogdanovich/tradekit/deribit"
+	"github.com/bogdanovich/tradekit/lib/tk"
 )
 
 func main() {

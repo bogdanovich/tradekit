@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/antibubblewrap/tradekit"
-	"github.com/antibubblewrap/tradekit/bybit"
-	"github.com/antibubblewrap/tradekit/deribit"
+	"github.com/bogdanovich/tradekit"
+	"github.com/bogdanovich/tradekit/bybit"
+	"github.com/bogdanovich/tradekit/deribit"
 )
 
 func main() {

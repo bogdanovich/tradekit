@@ -1,4 +1,4 @@
-module github.com/antibubblewrap/tradekit
+module github.com/bogdanovich/tradekit
 
 go 1.20
 

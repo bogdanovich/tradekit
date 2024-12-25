@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/antibubblewrap/tradekit/deribit"
+	"github.com/bogdanovich/tradekit/deribit"
 )
 
 func main() {

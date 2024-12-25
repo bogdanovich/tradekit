@@ -3,7 +3,7 @@ package deribit
 import (
 	"fmt"
 
-	"github.com/antibubblewrap/tradekit/lib/tk"
+	"github.com/bogdanovich/tradekit/lib/tk"
 	"github.com/valyala/fastjson"
 )
 

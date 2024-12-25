@@ -3,7 +3,7 @@ package bybit
 import (
 	"testing"
 
-	"github.com/antibubblewrap/tradekit"
+	"github.com/bogdanovich/tradekit"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fastjson"
 )

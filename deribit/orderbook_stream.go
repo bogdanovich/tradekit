@@ -3,7 +3,7 @@ package deribit
 import (
 	"fmt"
 
-	"github.com/antibubblewrap/tradekit/lib/tk"
+	"github.com/bogdanovich/tradekit/lib/tk"
 )
 
 // OrderbookSub represents a request to subscribe to a [NewOrderbookStream] channel.

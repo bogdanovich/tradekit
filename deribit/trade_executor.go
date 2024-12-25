@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/antibubblewrap/tradekit/internal/websocket"
+	"github.com/bogdanovich/tradekit/internal/websocket"
 	"github.com/valyala/fastjson"
 )
 

@@ -1,12 +1,12 @@
 # Crypto TradeKit
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/antibubblewrap/tradekit.svg)](https://pkg.go.dev/github.com/antibubblewrap/tradekit)
+[![Go Reference](https://pkg.go.dev/badge/github.com/bogdanovich/tradekit.svg)](https://pkg.go.dev/github.com/bogdanovich/tradekit)
 
 A collection of utiltities for cryptocurrency trading with Go. This package is a work
 in progress.
 
 ```
-go get -u github.com/antibubblewrap/tradekit
+go get -u github.com/bogdanovich/tradekit
 ```
 
 ## Features 
@@ -23,7 +23,7 @@ go get -u github.com/antibubblewrap/tradekit
 
 ## Bybit Features
 
-See [`github.com/antibubblewrap/tradekit/bybit`](https://pkg.go.dev/github.com/antibubblewrap/tradekit/bybit) for all features.
+See [`github.com/bogdanovich/tradekit/bybit`](https://pkg.go.dev/github.com/bogdanovich/tradekit/bybit) for all features.
 
   - Market data streams (spot, perpetual futures & inverse perpetual futures)
       1. `TradeStream`: a realtime stream of trades
@@ -32,7 +32,7 @@ See [`github.com/antibubblewrap/tradekit/bybit`](https://pkg.go.dev/github.com/a
 
 ## Deribit Features
 
-See [`github.com/antibubblewrap/tradekit/deribit`](https://pkg.go.dev/github.com/antibubblewrap/tradekit/deribit) for all features.
+See [`github.com/bogdanovich/tradekit/deribit`](https://pkg.go.dev/github.com/bogdanovich/tradekit/deribit) for all features.
 
   - Market data streams (spot, futures & options)
     1. `NewTradesStream`: a realtime stream of trades.
@@ -56,7 +56,7 @@ See [`github.com/antibubblewrap/tradekit/deribit`](https://pkg.go.dev/github.com
 
 ## Binance Features
 
-See [`github.com/antibubblewrap/tradekit/binance`](https://pkg.go.dev/github.com/antibubblewrap/tradekit/binance) for all features.
+See [`github.com/bogdanovich/tradekit/binance`](https://pkg.go.dev/github.com/bogdanovich/tradekit/binance) for all features.
 
   - Market data streams (spot, USD-M perpetual futures & COIN-M inverse perpetual futures)
     1. `TradeStream`: a realtime stream of trades.

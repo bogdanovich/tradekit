@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/antibubblewrap/tradekit"
+	"github.com/bogdanovich/tradekit"
 	"github.com/valyala/fastjson"
 )
 

@@ -3,7 +3,7 @@ package deribit
 import (
 	"fmt"
 
-	"github.com/antibubblewrap/tradekit/lib/tk"
+	"github.com/bogdanovich/tradekit/lib/tk"
 )
 
 // OrderbookDepthSub represents a subscription to a deribit orderbook depth stream created

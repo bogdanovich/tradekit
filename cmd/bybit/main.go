@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/antibubblewrap/tradekit"
-	"github.com/antibubblewrap/tradekit/bybit"
+	"github.com/bogdanovich/tradekit"
+	"github.com/bogdanovich/tradekit/bybit"
 )
 
 type bookUpdate struct {

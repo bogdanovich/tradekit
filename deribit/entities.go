@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/antibubblewrap/tradekit"
+	"github.com/bogdanovich/tradekit"
 	"github.com/valyala/fastjson"
 )
 

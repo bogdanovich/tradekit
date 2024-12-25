@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/antibubblewrap/tradekit/deribit"
+	"github.com/bogdanovich/tradekit/deribit"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	for i, inst := range options {
 		bookSubs[i] = deribit.OrderbookDepthSub{Instrument: inst.Name, Depth: 20}
 	}
-	bookStream := deribit.NewOrderbookDepthStream("wss://streams.deribit.com/ws/api/v2", bookSubs...)
+	bookStream := deribit.NewOrderbookDepthStream("wss://streams.deribit.com/ws/api/v2", bookSubs)
 
 	if err := bookStream.Start(ctx); err != nil {
 		panic(err)

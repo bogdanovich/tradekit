@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/antibubblewrap/tradekit/internal/websocket"
+	"github.com/bogdanovich/tradekit/internal/websocket"
 	"github.com/valyala/fastjson"
 )
 

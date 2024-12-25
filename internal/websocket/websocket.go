@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/antibubblewrap/tradekit"
+	"github.com/bogdanovich/tradekit"
 	"github.com/gorilla/websocket"
 )
 

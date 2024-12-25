@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/antibubblewrap/tradekit"
-	"github.com/antibubblewrap/tradekit/internal/set"
-	"github.com/antibubblewrap/tradekit/internal/websocket"
+	"github.com/bogdanovich/tradekit"
+	"github.com/bogdanovich/tradekit/internal/set"
+	"github.com/bogdanovich/tradekit/internal/websocket"
 	"github.com/valyala/fastjson"
 )
 

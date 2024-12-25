@@ -3,7 +3,7 @@ package deribit
 import (
 	"fmt"
 
-	"github.com/antibubblewrap/tradekit/lib/tk"
+	"github.com/bogdanovich/tradekit/lib/tk"
 )
 
 // UserTradesSub defines a subscription channel for a user trades stream created using
