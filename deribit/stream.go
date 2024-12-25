@@ -57,6 +57,10 @@ type Stream[T any, U subscription] interface {
 	// Unsubscribe removes a subscription from the stream. This is a no-op if the
 	// subscription does not already exist.
 	Unsubscribe(subs ...U)
+
+	// PendingMessages returns the number of messages that have been received but not
+	// read from the Messages channel.
+	PendingMessages() int
 }
 
 // stream makes subscriptions to Deribit channels and provides a channel to receive
@@ -435,6 +439,10 @@ func (s *stream[T, U]) Err() <-chan error {
 
 func (s *stream[T, U]) Messages() <-chan T {
 	return s.msgs
+}
+
+func (s *stream[T, U]) PendingMessages() int {
+	return len(s.msgs)
 }
 
 func (s *stream[T, U]) nameErr(err error) error {
