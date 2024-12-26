@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/bogdanovich/tradekit/lib/safe"
 )
 
 // Error is returned by requests to the Deribit API in the event that the request
@@ -120,6 +122,25 @@ func (api *Api) GetOptionInstruments(currency string, expired bool) ([]Option, e
 	}
 	params := map[string]string{"currency": currency, "kind": "option", "expired": exp}
 	return apiPublicGet[[]Option](api, methodPublicGetInstruments, params)
+}
+
+type GetInstrumentsParams struct {
+	Currency string
+	Kind     *string
+	Expired  *bool
+}
+
+// GetOptionInstruments retrieves all Deribit option instruments on the given currency.
+// Set expired to true to show recently expired options instead of active ones.
+func (api *Api) GetInstruments(p GetInstrumentsParams) ([]Instrument, error) {
+	params := map[string]string{
+		"currency": p.Currency,
+		"expired":  strconv.FormatBool(safe.Bool(p.Expired)),
+	}
+	if p.Kind != nil {
+		params["kind"] = *p.Kind
+	}
+	return apiPublicGet[[]Instrument](api, methodPublicGetInstruments, params)
 }
 
 // GetCurrencies returns a slice of the supported currencies on Deribit from the

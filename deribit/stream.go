@@ -58,9 +58,9 @@ type Stream[T any, U subscription] interface {
 	// subscription does not already exist.
 	Unsubscribe(subs ...U)
 
-	// PendingMessages returns the number of messages that have been received but not
+	// PendingMessagesCount returns the number of messages that have been received but not
 	// read from the Messages channel.
-	PendingMessages() int
+	PendingMessagesCount() int
 }
 
 // stream makes subscriptions to Deribit channels and provides a channel to receive
@@ -441,7 +441,7 @@ func (s *stream[T, U]) Messages() <-chan T {
 	return s.msgs
 }
 
-func (s *stream[T, U]) PendingMessages() int {
+func (s *stream[T, U]) PendingMessagesCount() int {
 	return len(s.msgs)
 }
 

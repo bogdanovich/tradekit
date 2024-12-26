@@ -284,3 +284,83 @@ type GetTradesOptions struct {
 	startSequence int
 	endSequence   int
 }
+
+// Instrument holds all fields returned in the "result" array for each instrument.
+type Instrument struct {
+	BaseCurrency             string         `json:"base_currency"`
+	BlockTradeCommission     float64        `json:"block_trade_commission"`
+	BlockTradeMinTradeAmount float64        `json:"block_trade_min_trade_amount"`
+	BlockTradeTickSize       float64        `json:"block_trade_tick_size"`
+	ContractSize             float64        `json:"contract_size"`
+	CounterCurrency          string         `json:"counter_currency"`
+	CreationTimestamp        int64          `json:"creation_timestamp"`
+	ExpirationTimestamp      int64          `json:"expiration_timestamp"`
+	FutureType               string         `json:"future_type"` // Deprecated; use InstrumentType instead.
+	InstrumentID             int            `json:"instrument_id"`
+	InstrumentName           string         `json:"instrument_name"`
+	InstrumentType           string         `json:"instrument_type"`
+	IsActive                 bool           `json:"is_active"`
+	Kind                     string         `json:"kind"`
+	MakerCommission          float64        `json:"maker_commission"`
+	MaxLeverage              int            `json:"max_leverage"`
+	MaxLiquidationCommission float64        `json:"max_liquidation_commission"`
+	MinTradeAmount           float64        `json:"min_trade_amount"`
+	OptionType               string         `json:"option_type"`
+	PriceIndex               string         `json:"price_index"`
+	QuoteCurrency            string         `json:"quote_currency"`
+	Rfq                      bool           `json:"rfq"`
+	SettlementCurrency       string         `json:"settlement_currency"`
+	SettlementPeriod         string         `json:"settlement_period"`
+	Strike                   float64        `json:"strike"`
+	TakerCommission          float64        `json:"taker_commission"`
+	TickSize                 float64        `json:"tick_size"`
+	TickSizeSteps            []TickSizeStep `json:"tick_size_steps"`
+}
+
+func parseInstrument(v *fastjson.Value) Instrument {
+	return Instrument{
+		BaseCurrency:             string(v.GetStringBytes("base_currency")),
+		BlockTradeCommission:     v.GetFloat64("block_trade_commission"),
+		BlockTradeMinTradeAmount: v.GetFloat64("block_trade_min_trade_amount"),
+		BlockTradeTickSize:       v.GetFloat64("block_trade_tick_size"),
+		ContractSize:             v.GetFloat64("contract_size"),
+		CounterCurrency:          string(v.GetStringBytes("counter_currency")),
+		CreationTimestamp:        v.GetInt64("creation_timestamp"),
+		ExpirationTimestamp:      v.GetInt64("expiration_timestamp"),
+		FutureType:               string(v.GetStringBytes("future_type")),
+		InstrumentID:             v.GetInt("instrument_id"),
+		InstrumentName:           string(v.GetStringBytes("instrument_name")),
+		InstrumentType:           string(v.GetStringBytes("instrument_type")),
+		IsActive:                 v.GetBool("is_active"),
+		Kind:                     string(v.GetStringBytes("kind")),
+		MakerCommission:          v.GetFloat64("maker_commission"),
+		MaxLeverage:              v.GetInt("max_leverage"),
+		MaxLiquidationCommission: v.GetFloat64("max_liquidation_commission"),
+		MinTradeAmount:           v.GetFloat64("min_trade_amount"),
+		OptionType:               string(v.GetStringBytes("option_type")),
+		PriceIndex:               string(v.GetStringBytes("price_index")),
+		QuoteCurrency:            string(v.GetStringBytes("quote_currency")),
+		Rfq:                      v.GetBool("rfq"),
+		SettlementCurrency:       string(v.GetStringBytes("settlement_currency")),
+		SettlementPeriod:         string(v.GetStringBytes("settlement_period")),
+		Strike:                   v.GetFloat64("strike"),
+		TakerCommission:          v.GetFloat64("taker_commission"),
+		TickSize:                 v.GetFloat64("tick_size"),
+		TickSizeSteps:            parseTickSizeSteps(v.GetArray("tick_size_steps")),
+	}
+}
+
+func parseTickSizeStep(v *fastjson.Value) TickSizeStep {
+	return TickSizeStep{
+		AbovePrice: v.GetFloat64("above_price"),
+		TickSize:   v.GetFloat64("tick_size"),
+	}
+}
+
+func parseTickSizeSteps(items []*fastjson.Value) []TickSizeStep {
+	steps := make([]TickSizeStep, len(items))
+	for i, item := range items {
+		steps[i] = parseTickSizeStep(item)
+	}
+	return steps
+}
