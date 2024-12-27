@@ -20,7 +20,7 @@ const (
 	methodPublicGetLastTradesByInstrumentAndTime rpcMethod = "public/get_last_trades_by_instrument_and_time"
 	methodPublicGetIndexPrice                    rpcMethod = "public/get_index_price"
 	methodPublicGetDeliveryPrices                rpcMethod = "public/get_delivery_prices"
-
+	methodPublicGetBookSummaryByCurrency         rpcMethod = "public/get_book_summary_by_currency"
 	// private methods
 	methodPrivateSubscribe           rpcMethod = "private/subscribe"
 	methodPrivateUnsubscribe         rpcMethod = "private/unsubscribe"

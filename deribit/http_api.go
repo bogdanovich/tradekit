@@ -381,3 +381,13 @@ func urlWithParams(baseUrl *url.URL, method rpcMethod, params map[string]string)
 func apiErr(method rpcMethod, err error) error {
 	return fmt.Errorf("Deribit API error %s: %w", method, err)
 }
+
+// GetBookSummaryByCurrency retrieves the summary information for all instruments of a currency
+// For details see: https://docs.deribit.com/#public-get_book_summary_by_currency
+func (api *Api) GetBookSummaryByCurrency(currency string, kind InstrumentKind) ([]BookSummary, error) {
+	params := map[string]string{
+		"currency": currency,
+		"kind":     string(kind),
+	}
+	return apiPublicGet[[]BookSummary](api, methodPublicGetBookSummaryByCurrency, params)
+}

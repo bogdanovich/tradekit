@@ -8,6 +8,8 @@ import (
 	"github.com/valyala/fastjson"
 )
 
+
+
 type PublicTrade struct {
 	TradeSeq      int64   `json:"trade_seq" parquet:"name=trade_seq, type=INT64"`
 	Timestamp     int64   `json:"timestamp" parquet:"name=timestamp, type=INT64"`
@@ -363,4 +365,69 @@ func parseTickSizeSteps(items []*fastjson.Value) []TickSizeStep {
 		steps[i] = parseTickSizeStep(item)
 	}
 	return steps
+}
+
+// BookSummary represents the summary information for an instrument's orderbook
+// For details see: https://docs.deribit.com/#public-get_book_summary_by_instrument
+type BookSummary struct {
+	AskPrice              float64 `json:"ask_price"`
+	BaseCurrency          string  `json:"base_currency"`
+	BidPrice             float64 `json:"bid_price"`
+	CreationTimestamp    int64   `json:"creation_timestamp"`
+	CurrentFunding       float64 `json:"current_funding"`
+	EstDeliveryPrice    float64 `json:"estimated_delivery_price"`
+	Funding8h           float64 `json:"funding_8h"`
+	High                float64 `json:"high"`
+	InstrumentName      string  `json:"instrument_name"`
+	InterestRate        float64 `json:"interest_rate"`
+	Last                float64 `json:"last"`
+	Low                 float64 `json:"low"`
+	MarkIV              float64 `json:"mark_iv"`
+	MarkPrice           float64 `json:"mark_price"`
+	MidPrice            float64 `json:"mid_price"`
+	OpenInterest        float64 `json:"open_interest"`
+	PriceChange         float64 `json:"price_change"`
+	QuoteCurrency       string  `json:"quote_currency"`
+	UnderlyingIndex     string  `json:"underlying_index"`
+	UnderlyingPrice     float64 `json:"underlying_price"`
+	Volume              float64 `json:"volume"`
+	VolumeNotional     float64 `json:"volume_notional"`
+	VolumeUSD          float64 `json:"volume_usd"`
+}
+
+func parseBookSummary(v *fastjson.Value) BookSummary {
+	return BookSummary{
+		AskPrice:           v.GetFloat64("ask_price"),
+		BaseCurrency:       string(v.GetStringBytes("base_currency")),
+		BidPrice:          v.GetFloat64("bid_price"),
+		CreationTimestamp: v.GetInt64("creation_timestamp"),
+		CurrentFunding:    v.GetFloat64("current_funding"),
+		EstDeliveryPrice: v.GetFloat64("estimated_delivery_price"),
+		Funding8h:        v.GetFloat64("funding_8h"),
+		High:             v.GetFloat64("high"),
+		InstrumentName:   string(v.GetStringBytes("instrument_name")),
+		InterestRate:     v.GetFloat64("interest_rate"),
+		Last:             v.GetFloat64("last"),
+		Low:              v.GetFloat64("low"),
+		MarkIV:           v.GetFloat64("mark_iv"),
+		MarkPrice:        v.GetFloat64("mark_price"),
+		MidPrice:         v.GetFloat64("mid_price"),
+		OpenInterest:     v.GetFloat64("open_interest"),
+		PriceChange:      v.GetFloat64("price_change"),
+		QuoteCurrency:    string(v.GetStringBytes("quote_currency")),
+		UnderlyingIndex:  string(v.GetStringBytes("underlying_index")),
+		UnderlyingPrice:  v.GetFloat64("underlying_price"),
+		Volume:           v.GetFloat64("volume"),
+		VolumeNotional:  v.GetFloat64("volume_notional"),
+		VolumeUSD:       v.GetFloat64("volume_usd"),
+	}
+}
+
+func parseBookSummaries(v *fastjson.Value) []BookSummary {
+	items := v.GetArray()
+	summaries := make([]BookSummary, len(items))
+	for i, item := range items {
+		summaries[i] = parseBookSummary(item)
+	}
+	return summaries
 }
