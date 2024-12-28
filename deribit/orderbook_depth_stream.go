@@ -39,6 +39,6 @@ func NewOrderbookDepthStream(wsUrl string, subscriptions []OrderbookDepthSub, pa
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}
-	s := newStream[OrderbookDepth](p)
+	s := newStream(p)
 	return s
 }

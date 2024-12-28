@@ -14,9 +14,9 @@ type DeribitPriceIndexSub struct {
 }
 
 type DeribitPriceIndex struct {
-	Timestamp int64
-	Price     float64
-	IndexName string
+	Timestamp int64   `json:"timestamp" parquet:"name=timestamp, type=INT64"`
+	Price     float64 `json:"price" parquet:"name=price, type=DOUBLE"`
+	IndexName string  `json:"index_name" parquet:"name=index_name, type=BYTE_ARRAY, convertedtype=UTF8"`
 }
 
 func (sub DeribitPriceIndexSub) channel() string {
