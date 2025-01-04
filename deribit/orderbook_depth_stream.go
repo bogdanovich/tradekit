@@ -35,7 +35,7 @@ func NewOrderbookDepthStream(wsUrl string, subscriptions []OrderbookDepthSub, pa
 		name:         "OrderbookDepthStream",
 		wsUrl:        wsUrl,
 		isPrivate:    false,
-		parseMessage: parseOrderbookDepth,
+		parseMessage: ParseOrderbookDepth,
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}

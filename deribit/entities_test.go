@@ -89,7 +89,39 @@ func TestParseOrderbookDepth(t *testing.T) {
 	var p fastjson.Parser
 	v, err := p.Parse(input)
 	assert.Nil(t, err)
-	assert.Equal(t, expected, parseOrderbookDepth(v))
+	assert.Equal(t, expected, ParseOrderbookDepth(v))
+}
+
+func TestParseOrderbookDept_2(t *testing.T) {
+	input := `
+	{
+      "timestamp" : 1554375447971,
+      "instrument_name" : "ETH-PERPETUAL",
+      "change_id" : 109615,
+	  "bids" : [
+		["160", "40"]
+      ],
+      "asks" : [
+        ["161", "20"]
+	  ]
+	}	
+	`
+	expected := OrderbookDepth{
+		Timestamp:  1554375447971,
+		Instrument: "ETH-PERPETUAL",
+		ChangeID:   109615,
+		Bids: []tradekit.Level{
+			{Price: 160, Amount: 40},
+		},
+		Asks: []tradekit.Level{
+			{Price: 161, Amount: 20},
+		},
+	}
+
+	var p fastjson.Parser
+	v, err := p.Parse(input)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, ParseOrderbookDepth(v))
 }
 
 func TestParseOrderbookUpdate(t *testing.T) {
