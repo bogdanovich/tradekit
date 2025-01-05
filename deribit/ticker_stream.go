@@ -71,7 +71,7 @@ func NewTickerStream(wsUrl string, subscriptions []DeribitTickerSub, paramFuncs 
 		name:         "TickerStream",
 		wsUrl:        wsUrl,
 		isPrivate:    false,
-		parseMessage: parseTicker,
+		parseMessage: ParseDeribitTicker,
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}
@@ -79,7 +79,7 @@ func NewTickerStream(wsUrl string, subscriptions []DeribitTickerSub, paramFuncs 
 	return s
 }
 
-func parseTicker(v *fastjson.Value) DeribitTicker {
+func ParseDeribitTicker(v *fastjson.Value) DeribitTicker {
 	return DeribitTicker{
 		Timestamp:              v.GetInt64("timestamp"),
 		Instrument:             string(v.GetStringBytes("instrument_name")),

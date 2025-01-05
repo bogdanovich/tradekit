@@ -31,7 +31,7 @@ func NewPriceIndexStream(wsUrl string, subscriptions []DeribitPriceIndexSub, par
 		name:         "price_index_stream",
 		wsUrl:        wsUrl,
 		isPrivate:    false,
-		parseMessage: parsePriceIndex,
+		parseMessage: ParsePriceIndex,
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}
@@ -39,7 +39,7 @@ func NewPriceIndexStream(wsUrl string, subscriptions []DeribitPriceIndexSub, par
 	return s
 }
 
-func parsePriceIndex(v *fastjson.Value) DeribitPriceIndex {
+func ParsePriceIndex(v *fastjson.Value) DeribitPriceIndex {
 	return DeribitPriceIndex{
 		Timestamp: v.GetInt64("timestamp"),
 		Price:     v.GetFloat64("price"),

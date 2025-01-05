@@ -2,7 +2,7 @@ package deribit
 
 import (
 	"bytes"
-	"strconv"
+	"math"
 	"time"
 
 	"github.com/bogdanovich/tradekit"
@@ -41,16 +41,16 @@ type OrderbookDepth struct {
 // For more info see: https://docs.deribit.com/#book-instrument_name-interval
 type OrderbookUpdate struct {
 	// The type of orderbook update. Either "snapshot" or "change".
-	Type         string           `parquet:"name=type, type=BYTE_ARRAY, convertedtype=UTF8"`
-	Timestamp    int64            `parquet:"name=timestamp, type=INT64"`
-	Instrument   string           `parquet:"name=instrument, type=BYTE_ARRAY, convertedtype=UTF8"`
-	ChangeID     int64            `parquet:"name=change_id, type=INT64"`
-	PrevChangeID int64            `parquet:"name=prev_change_id, type=INT64"`
-	Bids         []tradekit.Level `parquet:"name=bids, type=LIST"`
-	Asks         []tradekit.Level `parquet:"name=asks, type=LIST"`
+	Type         string           `json:"type" parquet:"name=type, type=BYTE_ARRAY, convertedtype=UTF8"`
+	Timestamp    int64            `json:"timestamp" parquet:"name=timestamp, type=INT64"`
+	Instrument   string           `json:"instrument_name" parquet:"name=instrument, type=BYTE_ARRAY, convertedtype=UTF8"`
+	ChangeID     int64            `json:"change_id" parquet:"name=change_id, type=INT64"`
+	PrevChangeID int64            `json:"prev_change_id" parquet:"name=prev_change_id, type=INT64"`
+	Bids         []tradekit.Level `json:"bids" parquet:"name=bids, type=LIST"`
+	Asks         []tradekit.Level `json:"asks" parquet:"name=asks, type=LIST"`
 }
 
-func parseOrderbookUpdate(v *fastjson.Value) OrderbookUpdate {
+func ParseOrderbookUpdate(v *fastjson.Value) OrderbookUpdate {
 	return OrderbookUpdate{
 		Type:         string(v.GetStringBytes("type")),
 		Timestamp:    v.GetInt64("timestamp"),
@@ -63,9 +63,40 @@ func parseOrderbookUpdate(v *fastjson.Value) OrderbookUpdate {
 }
 
 func parseOrderbookLevel(v *fastjson.Value) tradekit.Level {
-	action := v.GetStringBytes("0")
-	price := v.GetFloat64("1")
-	amount := v.GetFloat64("2")
+	if v == nil {
+		return tradekit.Level{}
+	}
+
+	arr := v.GetArray()
+	if len(arr) < 3 {
+		return tradekit.Level{}
+	}
+
+	if arr[0] == nil || arr[1] == nil || arr[2] == nil {
+		return tradekit.Level{}
+	}
+
+	action := arr[0].GetStringBytes()
+	if action == nil {
+		return tradekit.Level{}
+	}
+
+	var price, amount float64
+
+	// Parse price, which may be a number or string
+	if arr[1].Type() == fastjson.TypeString {
+		price = bytesToFloat(arr[1].GetStringBytes())
+	} else {
+		price = arr[1].GetFloat64()
+	}
+
+	// Parse amount, which may be a number or string
+	if arr[2].Type() == fastjson.TypeString {
+		amount = bytesToFloat(arr[2].GetStringBytes())
+	} else {
+		amount = arr[2].GetFloat64()
+	}
+
 	if bytes.Equal(action, []byte("delete")) {
 		amount = 0
 	}
@@ -80,7 +111,7 @@ func parseOrderbookLevels(items []*fastjson.Value) []tradekit.Level {
 	return levels
 }
 
-func parsePublicTrade(v *fastjson.Value) PublicTrade {
+func ParsePublicTrade(v *fastjson.Value) PublicTrade {
 	return PublicTrade{
 		TradeSeq:      v.GetInt64("trade_seq"),
 		Timestamp:     v.GetInt64("timestamp"),
@@ -98,7 +129,7 @@ func parsePublicTrades(v *fastjson.Value) []PublicTrade {
 	items := v.GetArray()
 	trades := make([]PublicTrade, len(items))
 	for i, item := range items {
-		trades[i] = parsePublicTrade(item)
+		trades[i] = ParsePublicTrade(item)
 	}
 	return trades
 }
@@ -122,29 +153,34 @@ func ParseOrderbookDepth(v *fastjson.Value) OrderbookDepth {
 }
 
 func parsePriceLevel(v *fastjson.Value) tradekit.Level {
-	var price, amount float64
+	if v == nil {
+		return tradekit.Level{}
+	}
 
 	// Get the array items first
 	arr := v.GetArray()
-	priceVal := arr[0]
-	amountVal := arr[1]
+	if len(arr) < 2 {
+		return tradekit.Level{}
+	}
+
+	if arr[0] == nil || arr[1] == nil {
+		return tradekit.Level{}
+	}
+
+	var price, amount float64
 
 	// Parse price, which may be a number or string
-	switch priceVal.Type() {
-	case fastjson.TypeString:
-		parsed, _ := strconv.ParseFloat(string(priceVal.GetStringBytes()), 64)
-		price = parsed
-	default:
-		price = priceVal.GetFloat64()
+	if arr[0].Type() == fastjson.TypeString {
+		price = bytesToFloat(arr[0].GetStringBytes())
+	} else {
+		price = arr[0].GetFloat64()
 	}
 
 	// Parse amount, which may be a number or string
-	switch amountVal.Type() {
-	case fastjson.TypeString:
-		parsed, _ := strconv.ParseFloat(string(amountVal.GetStringBytes()), 64)
-		amount = parsed
-	default:
-		amount = amountVal.GetFloat64()
+	if arr[1].Type() == fastjson.TypeString {
+		amount = bytesToFloat(arr[1].GetStringBytes())
+	} else {
+		amount = arr[1].GetFloat64()
 	}
 
 	return tradekit.Level{Price: price, Amount: amount}
@@ -452,4 +488,50 @@ func parseBookSummaries(v *fastjson.Value) []BookSummary {
 		summaries[i] = parseBookSummary(item)
 	}
 	return summaries
+}
+
+// bytesToFloat converts []byte to float64 without allocating a string
+func bytesToFloat(b []byte) float64 {
+	// Handle empty or nil bytes
+	if len(b) == 0 {
+		return 0
+	}
+
+	var neg bool
+	var num, dec uint64
+	var decPlaces uint
+
+	i := 0
+	// Handle sign
+	if b[0] == '-' {
+		neg = true
+		i++
+	} else if b[0] == '+' {
+		i++
+	}
+
+	// Parse integer part
+	for ; i < len(b) && b[i] != '.'; i++ {
+		if b[i] >= '0' && b[i] <= '9' {
+			num = num*10 + uint64(b[i]-'0')
+		}
+	}
+
+	// Parse decimal part if exists
+	if i < len(b) && b[i] == '.' {
+		i++
+		for ; i < len(b); i++ {
+			if b[i] >= '0' && b[i] <= '9' {
+				dec = dec*10 + uint64(b[i]-'0')
+				decPlaces++
+			}
+		}
+	}
+
+	// Combine integer and decimal parts
+	result := float64(num) + float64(dec)/math.Pow10(int(decPlaces))
+	if neg {
+		result = -result
+	}
+	return result
 }
