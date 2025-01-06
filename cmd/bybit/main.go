@@ -24,9 +24,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	bybitUrl := "wss://stream.bybit.com/v5/public/linear"
-	sub := bybit.OrderbookSub{Symbol: "BTCUSDT", Depth: 200}
-	bybitBookStream := bybit.NewOrderbookStream(bybitUrl, sub)
+	//bybitUrl := "wss://stream.bybit.com/v5/public/linear"
+	bybitUrlSpot := "wss://stream.bybit.com/v5/public/spot"
+	subs := []bybit.OrderbookSub{
+		//{Symbol: "BTCUSDT", Depth: 200},
+		{Symbol: "ETHUSDT", Depth: 200},
+		//{Symbol: "ETHUSDT", Depth: 200},
+	}
+	bybitBookStream := bybit.NewOrderbookStream(bybitUrlSpot, subs...)
 	if err := bybitBookStream.Start(ctx); err != nil {
 		panic(err)
 	}
@@ -46,8 +51,8 @@ func main() {
 		case <-ctx.Done():
 			return
 		case msg := <-bybitBookStream.Messages():
-			m := bookUpdate{msg.Type, msg.Data.Bids, msg.Data.Asks}
-			data, err := json.Marshal(m)
+			// m := bookUpdate{msg.Type, msg.Data.Bids, msg.Data.Asks}
+			data, err := json.Marshal(msg)
 			if err != nil {
 				panic(err)
 			}
