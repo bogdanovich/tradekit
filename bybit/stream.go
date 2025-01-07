@@ -41,6 +41,7 @@ type Stream[T any] interface {
 	Start(context.Context) error
 	Messages() <-chan T
 	Err() <-chan error
+	PendingMessagesCount() int
 }
 
 // stream implements Stream[T]. It uses tk.Params for logger, credentials, buffer size, etc.
@@ -95,6 +96,10 @@ func (s *stream[T]) Messages() <-chan T {
 // Err returns a channel which will receive errors that cause the stream to exit.
 func (s *stream[T]) Err() <-chan error {
 	return s.errc
+}
+
+func (s *stream[T]) PendingMessagesCount() int {
+	return len(s.msgs)
 }
 
 // Start spins up the main loop with reconnect logic.
