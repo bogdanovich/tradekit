@@ -1,6 +1,7 @@
 package bybit
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/bogdanovich/tradekit"
@@ -8,50 +9,79 @@ import (
 	"github.com/valyala/fastjson"
 )
 
-func TestParseTrades(t *testing.T) {
+func TestParseSpotTicker(t *testing.T) {
 	input := `
 	{
-		"topic": "publicTrade.BTCUSDT",
-		"type": "snapshot",
-		"ts": 1672304486868,
-		"data": [
-			{
-				"T": 1672304486865,
-				"s": "BTCUSDT",
-				"S": "Buy",
-				"v": "0.001",
-				"p": "16578.50",
-				"L": "PlusTick",
-				"i": "20f43950-d8dd-5b31-9112-a178eb6023af",
-				"BT": false
-			}
-		]
-	}
+    "topic": "tickers.ETHUSDT",
+    "ts": 1736220203217,
+    "type": "snapshot",
+    "cs": 89486329596,
+    "data": {
+        "symbol": "ETHUSDT",
+        "lastPrice": "3679.25",
+        "highPrice24h": "3745.7",
+        "lowPrice24h": "3622.1",
+        "prevPrice24h": "3660.26",
+        "volume24h": "215730.42023",
+        "turnover24h": "792650578.4000126",
+        "price24hPcnt": "0.0052",
+        "usdIndexPrice": "3680.151282"
+    }
+}
 	`
 
-	expected := TradesMessage{
-		Topic:     "publicTrade.BTCUSDT",
-		Type:      "snapshot",
-		Timestamp: 1672304486868,
-		Data: []Trade{
-			{
-				Timestamp:  1672304486865,
-				Symbol:     "BTCUSDT",
-				Direction:  Buy,
-				Amount:     0.001,
-				Price:      16578.50,
-				TradeID:    "20f43950-d8dd-5b31-9112-a178eb6023af",
-				BlockTrade: false,
-			},
+	expected := SpotTicker{
+		Topic:         "tickers.ETHUSDT",
+		Type:          "snapshot",
+		Timestamp:     1736220203217,
+		CrossSequence: 89486329596,
+		Data: SpotTickerData{
+			Symbol:        "ETHUSDT",
+			LastPrice:     3679.25,
+			HighPrice24h:  3745.7,
+			LowPrice24h:   3622.1,
+			PrevPrice24h:  3660.26,
+			Volume24h:     215730.42023,
+			Turnover24h:   792650578.4000126,
+			Price24hPcnt:  0.0052,
+			USDIndexPrice: 3680.151282,
 		},
 	}
 
 	var p fastjson.Parser
 	v, err := p.Parse(input)
 	assert.Nil(t, err)
-	trades, err := parseTradesMessage(v)
+	ticker := ParseSpotTicker(v)
+	assert.Equal(t, expected, ticker)
+}
+
+func TestMarshalUnmarshalSpotTicker(t *testing.T) {
+	expected := SpotTicker{
+		Topic:         "tickers.ETHUSDT",
+		Type:          "snapshot",
+		Timestamp:     1736220203217,
+		CrossSequence: 89486329596,
+		Data: SpotTickerData{
+			Symbol:        "ETHUSDT",
+			LastPrice:     3679.25,
+			HighPrice24h:  3745.7,
+			LowPrice24h:   3622.1,
+			PrevPrice24h:  3660.26,
+			Volume24h:     215730.42023,
+			Turnover24h:   792650578.4000126,
+			Price24hPcnt:  0.0052,
+			USDIndexPrice: 3680.151282,
+		},
+	}
+
+	json, err := json.Marshal(expected)
 	assert.Nil(t, err)
-	assert.Equal(t, expected, trades)
+
+	var p fastjson.Parser
+	v, err := p.Parse(string(json))
+	assert.Nil(t, err)
+	ticker := ParseSpotTicker(v)
+	assert.Equal(t, expected, ticker)
 }
 
 func TestParseOrderbookUpdte(t *testing.T) {
@@ -110,8 +140,7 @@ func TestParseOrderbookUpdte(t *testing.T) {
 	var p fastjson.Parser
 	v, err := p.Parse(input)
 	assert.Nil(t, err)
-	msg, err := parseOrderbookUpdateMessage(v)
-	assert.Nil(t, err)
+	msg := ParseOrderbookUpdateMessage(v)
 	assert.Equal(t, expected, msg)
 }
 
@@ -146,8 +175,28 @@ func TestParseLiquidation(t *testing.T) {
 	var p fastjson.Parser
 	v, err := p.Parse(input)
 	assert.Nil(t, err)
-	msg, err := parseLiquidation(v)
-	assert.Nil(t, err)
+	msg := ParseLiquidation(v)
 	assert.Equal(t, expected, msg)
 
+}
+
+func TestMarshalUnmarshalTrade(t *testing.T) {
+	expected := Trade{
+		Timestamp:  1673251091822,
+		Symbol:     "BTCUSDT",
+		Price:      3679.25,
+		Amount:     0.5,
+		Direction:  "Buy",
+		TradeID:    123456789,
+		BlockTrade: true,
+	}
+
+	jsonData, err := json.Marshal(expected)
+	assert.Nil(t, err)
+
+	var p fastjson.Parser
+	v, err := p.Parse(string(jsonData))
+	assert.Nil(t, err)
+	trade := ParseTrade(v)
+	assert.Equal(t, expected, trade)
 }

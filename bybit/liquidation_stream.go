@@ -25,7 +25,7 @@ func NewLiquidationStream(wsUrl string, subs []LiquidationSub, paramFuncs ...tk.
 	params := streamParams[Liquidation]{
 		name:         "LiquidationStream",
 		wsUrl:        wsUrl,
-		parseMessage: parseLiquidation,
+		parseMessage: ParseLiquidation,
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}

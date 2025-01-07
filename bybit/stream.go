@@ -31,7 +31,7 @@ type subscription interface {
 type streamParams[T any] struct {
 	name         string
 	wsUrl        string
-	parseMessage func(*fastjson.Value) (T, error)
+	parseMessage func(*fastjson.Value) T
 	subs         []subscription
 	*tk.Params
 }
@@ -50,7 +50,7 @@ type stream[T any] struct {
 	url               string
 	msgs              chan T
 	errc              chan error
-	parseMessage      func(*fastjson.Value) (T, error)
+	parseMessage      func(*fastjson.Value) T
 	subscriptions     set.Set[string]
 	subscribeAllReq   chan struct{}
 	p                 fastjson.Parser
@@ -232,10 +232,7 @@ func (s *stream[T]) handleMessage(msg websocket.Message) error {
 		return nil
 	}
 
-	m, err := s.parseMessage(v)
-	if err != nil {
-		return err
-	}
+	m := s.parseMessage(v)
 	s.msgs <- m
 	return nil
 }

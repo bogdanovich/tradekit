@@ -20,36 +20,17 @@ func (s TickerSub) channel() string {
 //   - https://bybit-exchange.github.io/docs/v5/websocket/public/ticker
 //
 // Spot & Option tickers message are snapshot only
-func NewSpotTickerStream(wsUrl string, subs []TickerSub, paramFuncs ...tk.Param) Stream[SpotTickerMessage] {
+func NewSpotTickerStream(wsUrl string, subs []TickerSub, paramFuncs ...tk.Param) Stream[SpotTicker] {
 	subscriptions := make([]subscription, len(subs))
 	for i, sub := range subs {
 		subscriptions[i] = sub
 	}
-	params := streamParams[SpotTickerMessage]{
+	params := streamParams[SpotTicker]{
 		name:         "SpotTickerStream",
 		wsUrl:        wsUrl,
-		parseMessage: parseSpotTickerMessage,
+		parseMessage: ParseSpotTicker,
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}
-	return newStream[SpotTickerMessage](params)
-}
-
-// NewFuturesTickerStream returns a stream of futures tickers. For details see:
-//   - https://bybit-exchange.github.io/docs/v5/websocket/public/ticker
-//
-// TODO: Needs a solution to merge deltas and produce snapshots
-func NewFuturesTickerStream(wsUrl string, subs []TickerSub, paramFuncs ...tk.Param) Stream[FuturesTickerMessage] {
-	subscriptions := make([]subscription, len(subs))
-	for i, sub := range subs {
-		subscriptions[i] = sub
-	}
-	params := streamParams[FuturesTickerMessage]{
-		name:         "FuturesTickerStream",
-		wsUrl:        wsUrl,
-		parseMessage: parseFuturesTickerMessage,
-		subs:         subscriptions,
-		Params:       tk.ApplyParams(paramFuncs),
-	}
-	return newStream[FuturesTickerMessage](params)
+	return newStream[SpotTicker](params)
 }

@@ -27,7 +27,7 @@ func NewOrderbookStream(wsUrl string, subs []OrderbookSub, paramFuncs ...tk.Para
 	params := streamParams[OrderbookUpdateMessage]{
 		name:         "OrderbookStream",
 		wsUrl:        wsUrl,
-		parseMessage: parseOrderbookUpdateMessage,
+		parseMessage: ParseOrderbookUpdateMessage,
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}

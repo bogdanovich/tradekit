@@ -18,17 +18,17 @@ func (s TradesSub) channel() string {
 
 // NewTradesStream returns a stream of trades. For details see:
 //   - https://bybit-exchange.github.io/docs/v5/websocket/public/trade
-func NewTradesStream(wsUrl string, subs []TradesSub, paramFuncs ...tk.Param) Stream[TradesMessage] {
+func NewTradesStream(wsUrl string, subs []TradesSub, paramFuncs ...tk.Param) Stream[Trades] {
 	subscriptions := make([]subscription, len(subs))
 	for i, sub := range subs {
 		subscriptions[i] = sub
 	}
-	params := streamParams[TradesMessage]{
+	params := streamParams[Trades]{
 		name:         "TradesStream",
 		wsUrl:        wsUrl,
-		parseMessage: parseTradesMessage,
+		parseMessage: ParseTradesMessage,
 		subs:         subscriptions,
 		Params:       tk.ApplyParams(paramFuncs),
 	}
-	return newStream[TradesMessage](params)
+	return newStream[Trades](params)
 }
