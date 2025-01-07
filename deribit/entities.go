@@ -2,10 +2,10 @@ package deribit
 
 import (
 	"bytes"
-	"math"
 	"time"
 
 	"github.com/bogdanovich/tradekit"
+	"github.com/bogdanovich/tradekit/lib/conv"
 	"github.com/valyala/fastjson"
 )
 
@@ -85,14 +85,14 @@ func parseOrderbookLevel(v *fastjson.Value) tradekit.Level {
 
 	// Parse price, which may be a number or string
 	if arr[1].Type() == fastjson.TypeString {
-		price = bytesToFloat(arr[1].GetStringBytes())
+		price = conv.BytesToFloat(arr[1].GetStringBytes())
 	} else {
 		price = arr[1].GetFloat64()
 	}
 
 	// Parse amount, which may be a number or string
 	if arr[2].Type() == fastjson.TypeString {
-		amount = bytesToFloat(arr[2].GetStringBytes())
+		amount = conv.BytesToFloat(arr[2].GetStringBytes())
 	} else {
 		amount = arr[2].GetFloat64()
 	}
@@ -171,14 +171,14 @@ func parsePriceLevel(v *fastjson.Value) tradekit.Level {
 
 	// Parse price, which may be a number or string
 	if arr[0].Type() == fastjson.TypeString {
-		price = bytesToFloat(arr[0].GetStringBytes())
+		price = conv.BytesToFloat(arr[0].GetStringBytes())
 	} else {
 		price = arr[0].GetFloat64()
 	}
 
 	// Parse amount, which may be a number or string
 	if arr[1].Type() == fastjson.TypeString {
-		amount = bytesToFloat(arr[1].GetStringBytes())
+		amount = conv.BytesToFloat(arr[1].GetStringBytes())
 	} else {
 		amount = arr[1].GetFloat64()
 	}
@@ -488,50 +488,4 @@ func parseBookSummaries(v *fastjson.Value) []BookSummary {
 		summaries[i] = parseBookSummary(item)
 	}
 	return summaries
-}
-
-// bytesToFloat converts []byte to float64 without allocating a string
-func bytesToFloat(b []byte) float64 {
-	// Handle empty or nil bytes
-	if len(b) == 0 {
-		return 0
-	}
-
-	var neg bool
-	var num, dec uint64
-	var decPlaces uint
-
-	i := 0
-	// Handle sign
-	if b[0] == '-' {
-		neg = true
-		i++
-	} else if b[0] == '+' {
-		i++
-	}
-
-	// Parse integer part
-	for ; i < len(b) && b[i] != '.'; i++ {
-		if b[i] >= '0' && b[i] <= '9' {
-			num = num*10 + uint64(b[i]-'0')
-		}
-	}
-
-	// Parse decimal part if exists
-	if i < len(b) && b[i] == '.' {
-		i++
-		for ; i < len(b); i++ {
-			if b[i] >= '0' && b[i] <= '9' {
-				dec = dec*10 + uint64(b[i]-'0')
-				decPlaces++
-			}
-		}
-	}
-
-	// Combine integer and decimal parts
-	result := float64(num) + float64(dec)/math.Pow10(int(decPlaces))
-	if neg {
-		result = -result
-	}
-	return result
 }

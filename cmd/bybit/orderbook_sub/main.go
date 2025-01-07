@@ -9,6 +9,7 @@ import (
 
 	"github.com/bogdanovich/tradekit"
 	"github.com/bogdanovich/tradekit/bybit"
+	"github.com/bogdanovich/tradekit/lib/tk"
 )
 
 type bookUpdate struct {
@@ -31,7 +32,7 @@ func main() {
 		{Symbol: "ETHUSDT", Depth: 200},
 		//{Symbol: "ETHUSDT", Depth: 200},
 	}
-	bybitBookStream := bybit.NewOrderbookStream(bybitUrlSpot, subs...)
+	bybitBookStream := bybit.NewOrderbookStream(bybitUrlSpot, subs, tk.WithChannelBufferSize(10))
 	if err := bybitBookStream.Start(ctx); err != nil {
 		panic(err)
 	}

@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bogdanovich/tradekit"
 	"github.com/bogdanovich/tradekit/internal/set"
 	"github.com/bogdanovich/tradekit/internal/websocket"
+	"github.com/bogdanovich/tradekit/lib/tk"
 	"github.com/valyala/fastjson"
 )
 
@@ -23,72 +23,82 @@ var reconnectableErrors = []string{
 	"websocket: bad handshake",
 }
 
+type subscription interface {
+	channel() string
+}
+
+// streamParams holds creation parameters for a stream, similar to the Deribit approach.
+type streamParams[T any] struct {
+	name         string
+	wsUrl        string
+	parseMessage func(*fastjson.Value) (T, error)
+	subs         []subscription
+	*tk.Params
+}
+
+// Stream is our public interface.
 type Stream[T any] interface {
-	SetOptions(*tradekit.StreamOptions)
 	Start(context.Context) error
 	Messages() <-chan T
 	Err() <-chan error
 }
 
-type subscription interface {
-	channel() string
-}
-
-func heartbeatMsg() []byte {
-	return []byte(`{"op": "ping"}`)
-}
-
-func isPingOrSubscribeMsg(v *fastjson.Value) bool {
-	op := v.GetStringBytes("op")
-	if bytes.Equal(op, []byte("ping")) || bytes.Equal(op, []byte("subscribe")) {
-		return true
-	}
-	return false
-}
-
+// stream implements Stream[T]. It uses tk.Params for logger, credentials, buffer size, etc.
 type stream[T any] struct {
-	name string
-	url  string
-
-	msgs chan T
-	errc chan error
-
-	parseMessage  func(*fastjson.Value) (T, error)
-	subscriptions set.Set[string]
-
-	subscribeAllRequests chan struct{}
-
-	opts   *tradekit.StreamOptions
-	p      fastjson.Parser
-	closed atomic.Bool // used to mark the stream closed
+	name              string
+	url               string
+	msgs              chan T
+	errc              chan error
+	parseMessage      func(*fastjson.Value) (T, error)
+	subscriptions     set.Set[string]
+	subscribeAllReq   chan struct{}
+	p                 fastjson.Parser
+	closed            atomic.Bool
+	logger            tk.Logger
+	creds             *tk.Credentials
+	channelBufferSize int
 }
 
-// newStream is unchanged, except we keep everything as is.
-func newStream[T any](url string, name string, parseMessage func(*fastjson.Value) (T, error), subs []subscription) *stream[T] {
+// newStream constructs a new stream using the provided params and optional subscriptions.
+func newStream[T any](p streamParams[T]) *stream[T] {
+	// If no params passed, use defaults
+	if p.Params == nil {
+		p.Params = tk.DefaultParams()
+	}
+
+	// Build the set of subscribed channels
 	subscriptions := set.New[string]()
-	for _, s := range subs {
+	for _, s := range p.subs {
 		subscriptions.Add(s.channel())
 	}
 
 	return &stream[T]{
-		name:                 name,
-		url:                  url,
-		msgs:                 make(chan T, 10),
-		errc:                 make(chan error, 1),
-		parseMessage:         parseMessage,
-		subscriptions:        subscriptions,
-		subscribeAllRequests: make(chan struct{}, 1),
+		name:              p.name,
+		url:               p.wsUrl,
+		parseMessage:      p.parseMessage,
+		subscriptions:     subscriptions,
+		subscribeAllReq:   make(chan struct{}, 1),
+		logger:            p.Params.Logger,
+		creds:             p.Params.Credentials,
+		channelBufferSize: p.Params.ChannelBufferSize,
+		// We'll create buffered channels using the user-specified size
+		msgs: make(chan T, p.Params.ChannelBufferSize),
+		errc: make(chan error, 1),
 	}
 }
 
-func (s *stream[T]) SetOptions(opts *tradekit.StreamOptions) {
-	s.opts = opts
+// Messages returns a channel of streamed items (T).
+func (s *stream[T]) Messages() <-chan T {
+	return s.msgs
 }
 
-// Start uses an approach similar to deribit, with a restartChan that signals
-// when we need to reconnect.
+// Err returns a channel which will receive errors that cause the stream to exit.
+func (s *stream[T]) Err() <-chan error {
+	return s.errc
+}
+
+// Start spins up the main loop with reconnect logic.
 func (s *stream[T]) Start(ctx context.Context) error {
-	// A channel for restart signals
 	restartChan := make(chan struct{}, 1)
 
 	go func() {
@@ -96,7 +106,7 @@ func (s *stream[T]) Start(ctx context.Context) error {
 			s.closed.Store(true)
 			close(s.msgs)
 			close(s.errc)
-			close(s.subscribeAllRequests)
+			close(s.subscribeAllReq)
 		}()
 
 		for {
@@ -104,8 +114,10 @@ func (s *stream[T]) Start(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case <-restartChan:
-				// Wait 5 seconds, just like we do in deribit’s code, then reconnect.
+				// Similar to deribit, wait 5s before reconnect
+				s.logger.Info(fmt.Sprintf("Bybit %s: reconnecting in 5 seconds...", s.name))
 				time.Sleep(5 * time.Second)
+
 				if err := s.startWebsocketStream(ctx, restartChan); err != nil {
 					select {
 					case s.errc <- s.nameErr(err):
@@ -113,31 +125,35 @@ func (s *stream[T]) Start(ctx context.Context) error {
 					}
 					return
 				}
+				s.logger.Info(fmt.Sprintf("Bybit %s: reconnected", s.name))
 			}
 		}
 	}()
 
-	// Perform the initial connection
+	// Initial connection
 	return s.startWebsocketStream(ctx, restartChan)
 }
 
-// startWebsocketStream tries to open the websocket, set OnConnect, then reads messages/errors.
-// If a reconnectable error is encountered, it signals on restartChan.
+// startWebsocketStream dials the websocket, sets up read loops, listens for errors.
 func (s *stream[T]) startWebsocketStream(ctx context.Context, restartChan chan struct{}) error {
 	s.closed.Store(false)
 
-	ws := websocket.New(s.url, s.opts)
+	ws := websocket.New(s.url, nil)
+	if s.logger == nil {
+		s.logger = &tk.NoOpLogger{}
+	}
+
 	ws.OnConnect = func() error {
-		// Trigger subscribeAllRequests so all channels are re-subscribed
-		s.subscribeAllRequests <- struct{}{}
+		// Once connected, we trigger a full re-subscribe
+		s.subscribeAllReq <- struct{}{}
 		return nil
 	}
 
-	// Actually start the WS connection
 	if err := ws.Start(ctx); err != nil {
 		return s.nameErr(fmt.Errorf("connecting to websocket: %w", err))
 	}
 
+	// Goroutine to read messages, errors, and handle heartbeats.
 	go func() {
 		defer ws.Close()
 
@@ -155,27 +171,26 @@ func (s *stream[T]) startWebsocketStream(ctx context.Context, restartChan chan s
 					return
 				}
 
-			// send heartbeats
 			case <-ticker.C:
 				ws.Send(heartbeatMsg())
 
-			// re-subscribe upon request
-			case <-s.subscribeAllRequests:
+			case <-s.subscribeAllReq:
+				// re-subscribe to all channels
 				if err := s.subscribeAll(&ws); err != nil {
 					s.errc <- s.nameErr(err)
 					return
 				}
 
 			case err := <-ws.Err():
-				// If we get a reconnectable error, signal a restart
+				// check for reconnect
 				if s.shouldReconnect(err) {
+					s.logger.Error(fmt.Sprintf("Bybit %s: connection error: %v", s.name, err))
 					select {
 					case restartChan <- struct{}{}:
 					default:
 					}
 					return
 				}
-				// Otherwise, pass it to s.errc and exit
 				s.errc <- s.nameErr(err)
 				return
 			}
@@ -185,7 +200,7 @@ func (s *stream[T]) startWebsocketStream(ctx context.Context, restartChan chan s
 	return nil
 }
 
-// shouldReconnect is exactly as in deribit’s code, checking if the error contains any reconnectable keyword.
+// shouldReconnect checks if error string matches any known reconnectable pattern.
 func (s *stream[T]) shouldReconnect(err error) bool {
 	if err == nil {
 		return false
@@ -198,15 +213,7 @@ func (s *stream[T]) shouldReconnect(err error) bool {
 	return false
 }
 
-func (s *stream[T]) Err() <-chan error {
-	return s.errc
-}
-
-func (s *stream[T]) Messages() <-chan T {
-	return s.msgs
-}
-
-// handleMessage is unchanged, except we do everything in place.
+// handleMessage parses raw JSON, calls parseMessage, pushes to msgs channel.
 func (s *stream[T]) handleMessage(msg websocket.Message) error {
 	defer msg.Release()
 
@@ -228,7 +235,7 @@ func (s *stream[T]) handleMessage(msg websocket.Message) error {
 	return nil
 }
 
-// subscribeAll re-subscribes to the entire subscriptions set.
+// subscribeAll uses the current subscriptions list to send an op=subscribe message.
 func (s *stream[T]) subscribeAll(ws *websocket.Websocket) error {
 	if s.closed.Load() {
 		return fmt.Errorf("stream is closed")
@@ -253,6 +260,7 @@ func (s *stream[T]) nameErr(err error) error {
 	return fmt.Errorf("Bybit %s: %w", s.name, err)
 }
 
+// simple helper to check if op is in any of the provided strings
 func equalAny(b []byte, strs ...string) bool {
 	for _, s := range strs {
 		if bytes.Equal(b, []byte(s)) {
@@ -260,4 +268,9 @@ func equalAny(b []byte, strs ...string) bool {
 		}
 	}
 	return false
+}
+
+// heartbeatMsg is the periodic ping we send.
+func heartbeatMsg() []byte {
+	return []byte(`{"op": "ping"}`)
 }

@@ -29,19 +29,19 @@ func TestParseTrades(t *testing.T) {
 	}
 	`
 
-	expected := Trades{
+	expected := TradesMessage{
 		Topic:     "publicTrade.BTCUSDT",
 		Type:      "snapshot",
 		Timestamp: 1672304486868,
 		Data: []Trade{
 			{
-				FilledTimestamp: 1672304486865,
-				Symbol:          "BTCUSDT",
-				Direction:       Buy,
-				Amount:          0.001,
-				Price:           16578.50,
-				TradeID:         "20f43950-d8dd-5b31-9112-a178eb6023af",
-				BlockTrade:      false,
+				Timestamp:  1672304486865,
+				Symbol:     "BTCUSDT",
+				Direction:  Buy,
+				Amount:     0.001,
+				Price:      16578.50,
+				TradeID:    "20f43950-d8dd-5b31-9112-a178eb6023af",
+				BlockTrade: false,
 			},
 		},
 	}
@@ -49,7 +49,7 @@ func TestParseTrades(t *testing.T) {
 	var p fastjson.Parser
 	v, err := p.Parse(input)
 	assert.Nil(t, err)
-	trades, err := parseTrades(v)
+	trades, err := parseTradesMessage(v)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, trades)
 }
@@ -88,11 +88,11 @@ func TestParseOrderbookUpdte(t *testing.T) {
 	}	
 	`
 
-	expected := OrderbookUpdate{
+	expected := OrderbookUpdateMessage{
 		Topic:     "orderbook.50.BTCUSDT",
 		Type:      "snapshot",
 		Timestamp: 1672304484978,
-		Data: OrderbookUpdateData{
+		Data: OrderbookUpdate{
 			Symbol: "BTCUSDT",
 			Bids: []tradekit.Level{
 				{Price: 16493.50, Amount: 0.006},
@@ -110,7 +110,7 @@ func TestParseOrderbookUpdte(t *testing.T) {
 	var p fastjson.Parser
 	v, err := p.Parse(input)
 	assert.Nil(t, err)
-	msg, err := parseOrderbookUpdate(v)
+	msg, err := parseOrderbookUpdateMessage(v)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, msg)
 }

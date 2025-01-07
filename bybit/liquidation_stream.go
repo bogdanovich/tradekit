@@ -2,6 +2,8 @@ package bybit
 
 import (
 	"fmt"
+
+	"github.com/bogdanovich/tradekit/lib/tk"
 )
 
 // LiquidationSub represents a subscription to a liquidation stream. See [NewLiquidationStream]
@@ -15,10 +17,17 @@ func (s LiquidationSub) channel() string {
 
 // NewLiquidationStream returns a stream of liquidations. For details see:
 //   - https://bybit-exchange.github.io/docs/v5/websocket/public/liquidation
-func NewLiquidationStream(wsUrl string, subs ...LiquidationSub) Stream[Liquidation] {
+func NewLiquidationStream(wsUrl string, subs []LiquidationSub, paramFuncs ...tk.Param) Stream[Liquidation] {
 	subscriptions := make([]subscription, len(subs))
 	for i, sub := range subs {
 		subscriptions[i] = sub
 	}
-	return newStream[Liquidation](wsUrl, "LiquidationStream", parseLiquidation, subscriptions)
+	params := streamParams[Liquidation]{
+		name:         "LiquidationStream",
+		wsUrl:        wsUrl,
+		parseMessage: parseLiquidation,
+		subs:         subscriptions,
+		Params:       tk.ApplyParams(paramFuncs),
+	}
+	return newStream[Liquidation](params)
 }

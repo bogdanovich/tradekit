@@ -2,6 +2,8 @@ package bybit
 
 import (
 	"fmt"
+
+	"github.com/bogdanovich/tradekit/lib/tk"
 )
 
 // OrderbookSub represents a subscription to the stream of trades for trading symbol.
@@ -16,10 +18,17 @@ func (s TradesSub) channel() string {
 
 // NewTradesStream returns a stream of trades. For details see:
 //   - https://bybit-exchange.github.io/docs/v5/websocket/public/trade
-func NewTradesStream(wsUrl string, subs ...TradesSub) Stream[Trades] {
+func NewTradesStream(wsUrl string, subs []TradesSub, paramFuncs ...tk.Param) Stream[TradesMessage] {
 	subscriptions := make([]subscription, len(subs))
 	for i, sub := range subs {
 		subscriptions[i] = sub
 	}
-	return newStream[Trades](wsUrl, "TradesStream", parseTrades, subscriptions)
+	params := streamParams[TradesMessage]{
+		name:         "TradesStream",
+		wsUrl:        wsUrl,
+		parseMessage: parseTradesMessage,
+		subs:         subscriptions,
+		Params:       tk.ApplyParams(paramFuncs),
+	}
+	return newStream[TradesMessage](params)
 }
